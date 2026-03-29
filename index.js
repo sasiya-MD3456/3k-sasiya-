@@ -1,10 +1,11 @@
 const { 
     default: makeWASocket, 
     useMultiFileAuthState, 
-    Browsers, 
     fetchLatestBaileysVersion, 
     disconnectReason, 
-    jidDecode 
+    delay,
+    jidDecode,
+    Browsers
 } = require("@whiskeysockets/baileys");
 const express = require('express');
 const pino = require('pino');
@@ -15,30 +16,34 @@ const fs = require('fs-extra');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- ⚙️ BOT SETTINGS ---
+// --- ⚙️ BOT CONFIGURATION ---
 let botConfig = {
     isPublic: true,
     prefix: ".",
-    owner: "947xxxxxxxx", // Default (Web එකෙන් මාරු කළ හැක)
+    owner: "947xxxxxxxx", // ඔයාගේ නම්බර් එක මෙතනට දාන්න
     botName: "NEXUS-MD PRO V3",
-    team: "Developer Nexus"
+    team: "Developer Nexus",
+    logo: "https://telegra.ph/file/your-logo-link.jpg" // ඔයාගේ ලෝගෝ එකේ ලින්ක් එක
 };
 
 let pairingCode = ""; 
+let bot;
 
 async function startNexus() {
     const { state, saveCreds } = await useMultiFileAuthState('nexus_session');
     const { version } = await fetchLatestBaileysVersion();
 
-    const bot = makeWASocket({
+    bot = makeWASocket({
         version,
         logger: pino({ level: 'silent' }),
         auth: state,
-        browser: Browsers.macOS("Desktop"),
-        printQRInTerminal: false
+        // --- 🛠️ CHROME BROWSER FIX (වැඩියෙන්ම සාර්ථක ක්‍රමය) ---
+        browser: ["Ubuntu", "Chrome", "20.0.04"], 
+        printQRInTerminal: false,
+        syncFullHistory: false
     });
 
-    // --- 🌐 WEB DASHBOARD & PAIRING SYSTEM ---
+    // --- 🌐 CYBER-TECH WEB DASHBOARD ---
     app.get('/', (req, res) => {
         res.send(`
             <!DOCTYPE html>
@@ -47,38 +52,50 @@ async function startNexus() {
                 <title>${botConfig.botName} | Dashboard</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1">
                 <style>
-                    body { background: #0a0a0b; color: #00ffff; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
-                    .container { border: 2px solid #00ffff; border-radius: 20px; padding: 30px; display: inline-block; background: #111; box-shadow: 0 0 20px #00ffff66; }
-                    input { padding: 12px; border-radius: 8px; border: 1px solid cyan; background: #000; color: white; width: 80%; margin-bottom: 10px; }
-                    button { padding: 12px 25px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
-                    .btn-get { background: #00ffff; color: #000; }
-                    .btn-get:hover { background: white; }
-                    .btn-pub { background: #28a745; color: white; }
-                    .btn-priv { background: #dc3545; color: white; }
-                    .code-box { background: #000; border: 1px dashed yellow; color: yellow; padding: 15px; margin-top: 20px; font-size: 24px; letter-spacing: 5px; }
+                    body { background: #050505; color: #00ffff; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
+                    .container { border: 2px solid #00ffff; border-radius: 20px; padding: 30px; display: inline-block; background: #111; box-shadow: 0 0 30px #00ffff44; max-width: 450px; width: 90%; }
+                    h1 { text-shadow: 0 0 10px #00ffff; font-size: 28px; margin-bottom: 5px; }
+                    .owner-tag { color: #aaa; font-size: 14px; margin-bottom: 20px; }
+                    input { padding: 15px; border-radius: 10px; border: 1px solid cyan; background: #000; color: white; width: 85%; margin-bottom: 15px; text-align:center; font-size: 16px; }
+                    button { padding: 15px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; width: 93%; font-size: 16px; }
+                    .btn-get { background: #00ffff; color: #000; box-shadow: 0 0 15px #00ffff; }
+                    .btn-get:hover { background: #fff; box-shadow: 0 0 25px #fff; }
+                    .code-box { background: #1a1a1a; border: 2px dashed #ffcc00; color: #ffcc00; padding: 20px; margin-top: 25px; font-size: 32px; letter-spacing: 8px; font-weight: bold; border-radius: 10px; }
+                    .instructions { margin-top: 15px; font-size: 13px; color: #888; line-height: 1.6; }
+                    .mode-section { margin-top: 30px; border-top: 1px solid #333; padding-top: 20px; }
+                    .btn-mode { width: 45%; margin: 5px; font-size: 12px; }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <h1>⚡ ${botConfig.botName} ⚡</h1>
-                    <p>Powered by ${botConfig.team}</p>
+                    <div class="owner-tag">TEAM OWNER: Sasiya MD | Developer Nexus</div>
+                    
                     <hr border="1" color="#222">
                     
-                    <h3>STEP 1: GET PAIRING CODE</h3>
+                    <h3>🔑 GET PAIRING CODE</h3>
                     <form action="/getcode" method="get">
-                        <input type="text" name="number" placeholder="947xxxxxxxx" required>
+                        <input type="text" name="number" placeholder="94712345678" required>
                         <br>
-                        <button type="submit" class="btn-get">Generate Pairing Code</button>
+                        <button type="submit" class="btn-get">GENERATE CODE</button>
                     </form>
 
-                    ${pairingCode ? `<div class="code-box">CODE: ${pairingCode}</div>` : ""}
+                    ${pairingCode ? `
+                        <div class="code-box">${pairingCode}</div>
+                        <div class="instructions">
+                            <b>How to use:</b><br>
+                            1. Open WhatsApp on your phone.<br>
+                            2. Go to Settings > Linked Devices.<br>
+                            3. Select "Link with phone number instead".<br>
+                            4. Enter the code shown above.
+                        </div>
+                    ` : ""}
 
-                    <hr border="1" color="#222" style="margin-top:30px;">
-                    
-                    <h3>STEP 2: CONTROL PANEL</h3>
-                    <p>Current Mode: <b style="color:${botConfig.isPublic ? '#28a745' : '#dc3545'}">${botConfig.isPublic ? 'PUBLIC' : 'PRIVATE'}</b></p>
-                    <a href="/mode?set=public"><button class="btn-pub">Make Public</button></a>
-                    <a href="/mode?set=private"><button class="btn-priv">Make Private</button></a>
+                    <div class="mode-section">
+                        <p>Current Status: <b style="color:${botConfig.isPublic ? '#00ff00' : '#ff3333'}">${botConfig.isPublic ? 'PUBLIC MODE' : 'PRIVATE MODE'}</b></p>
+                        <a href="/mode?set=public"><button class="btn-mode" style="background:#008000; color:white;">PUBLIC</button></a>
+                        <a href="/mode?set=private"><button class="btn-mode" style="background:#800000; color:white;">PRIVATE</button></a>
+                    </div>
                 </div>
             </body>
             </html>
@@ -86,14 +103,15 @@ async function startNexus() {
     });
 
     app.get('/getcode', async (req, res) => {
-        let num = req.query.number;
-        if (!num) return res.send("Please enter your number!");
+        let num = req.query.number.replace(/[^0-9]/g, '');
+        if (!num) return res.send("වැරදි නම්බර් එකක් බන්!");
         try {
             if (!bot.authState.creds.registered) {
-                pairingCode = await bot.requestPairingCode(num.replace(/[^0-9]/g, ''));
+                await delay(2000); 
+                pairingCode = await bot.requestPairingCode(num);
                 res.redirect('/');
             } else {
-                res.send("Bot is already linked!");
+                res.send("බොට් දැනටමත් ලින්ක් වෙලා ඉන්නේ මචං!");
             }
         } catch (e) { res.send("Error: " + e); }
     });
@@ -105,7 +123,17 @@ async function startNexus() {
 
     bot.ev.on('creds.update', saveCreds);
 
-    // --- 📩 MESSAGE LOGIC ---
+    bot.ev.on('connection.update', (update) => {
+        const { connection, lastDisconnect } = update;
+        if (connection === 'close') {
+            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== disconnectReason.loggedOut;
+            if (shouldReconnect) startNexus();
+        } else if (connection === 'open') {
+            console.log('✅ බොට් සාර්ථකව වැඩ මචං!');
+        }
+    });
+
+    // --- 📩 MESSAGE HANDLER (COMMANDS) ---
     bot.ev.on('messages.upsert', async (chatUpdate) => {
         try {
             const mek = chatUpdate.messages[0];
@@ -118,84 +146,37 @@ async function startNexus() {
             const command = isCmd ? body.slice(1).trim().split(/ +/).shift().toLowerCase() : "";
             const args = body.trim().split(/ +/).slice(1);
             const text = args.join(" ");
-            const isGroup = from.endsWith('@g.us');
-            const isOwner = sender.includes(botConfig.owner) || sender.includes("947xxxxxxxx"); // ඔබේ අංකය මෙතනටත් දාන්න
+            const isOwner = sender.includes(botConfig.owner) || sender.includes("947xxxxxxxx"); // ඔයාගේ අංකය මෙතනටත් දාන්න
 
-            // Public/Private Logic
             if (!botConfig.isPublic && !isOwner) return;
 
             if (isCmd) {
                 switch (command) {
                     case 'menu':
-                        const menuText = `🚀 *${botConfig.botName}* 🚀\n\n` +
-                                       `*OWNER:* Sasiya MD\n` +
-                                       `*MODE:* ${botConfig.isPublic ? 'Public' : 'Private'}\n` +
-                                       `*PREFIX:* ${botConfig.prefix}\n\n` +
-                                       `🎵 *.song* [name]\n🎥 *.video* [name]\n🤖 *.ai* [text]\n📢 *.hidetag* [text]\n🚫 *.kick* [reply]\n🖼️ *.img* [query]\n\n` +
-                                       `_Powered by Developer Nexus_`;
-                        await bot.sendMessage(from, { 
-                            image: { url: 'https://telegra.ph/file/your-logo-link.jpg' }, // මෙතනට ඔයාගේ Logo Link එකක් දාන්න
-                            caption: menuText 
-                        }, { quoted: mek });
+                        const menu = `🚀 *${botConfig.botName}* 🚀\n\n` +
+                                     `👑 *Owner:* Sasiya MD\n` +
+                                     `⚡ *Prefix:* ${botConfig.prefix}\n` +
+                                     `💎 *Status:* ${botConfig.isPublic ? 'Public' : 'Private'}\n\n` +
+                                     `🎵 *.song* [name]\n🎥 *.video* [name]\n🤖 *.ai* [text]\n🖼️ *.img* [query]\n📢 *.hidetag* [text]\n🚫 *.kick* [reply]\n\n` +
+                                     `_Powered by Developer Nexus_`;
+                        await bot.sendMessage(from, { text: menu }, { quoted: mek });
                         break;
 
                     case 'song':
-                        if (!text) return bot.sendMessage(from, { text: "සින්දුවක නම දෙන්න මචං!" });
+                        if (!text) return bot.sendMessage(from, { text: "සින්දුවක නම දෙන්න!" });
                         const s = await yts(text);
-                        const v = s.videos[0];
-                        const res = await axios.get(`https://api.download-lagu-mp3.com/@api/json/mp3/${v.videoId}`);
-                        await bot.sendMessage(from, { 
-                            audio: { url: res.data.result.url }, 
-                            mimetype: 'audio/mp4',
-                            fileName: `${v.title}.mp3`
-                        }, { quoted: mek });
-                        break;
-
-                    case 'video':
-                        if (!text) return bot.sendMessage(from, { text: "වීඩියෝවක නම දෙන්න!" });
-                        const vs = await yts(text);
-                        const vi = vs.videos[0];
-                        const vres = await axios.get(`https://api.download-lagu-mp3.com/@api/json/mp4/${vi.videoId}`);
-                        await bot.sendMessage(from, { 
-                            video: { url: vres.data.result.url }, 
-                            caption: vi.title 
-                        }, { quoted: mek });
+                        const res = await axios.get(`https://api.download-lagu-mp3.com/@api/json/mp3/${s.videos[0].videoId}`);
+                        await bot.sendMessage(from, { audio: { url: res.data.result.url }, mimetype: 'audio/mp4' }, { quoted: mek });
                         break;
 
                     case 'ai':
-                        const ai = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(text)}&lc=en`);
-                        await bot.sendMessage(from, { text: `🤖 *AI:* ${ai.data.success}` }, { quoted: mek });
-                        break;
-
-                    case 'hidetag':
-                        if (!isGroup || !isOwner) return;
-                        const groupMeta = await bot.groupMetadata(from);
-                        bot.sendMessage(from, { text: text, mentions: groupMeta.participants.map(a => a.id) });
-                        break;
-
-                    case 'kick':
-                        if (!isGroup || !isOwner) return;
-                        let user = mek.message.extendedTextMessage?.contextInfo?.participant;
-                        await bot.groupParticipantsUpdate(from, [user], "remove");
+                        if (!text) return bot.sendMessage(from, { text: "මොනවා හරි අහන්න!" });
+                        const aiRes = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(text)}&lc=en`);
+                        await bot.sendMessage(from, { text: `🤖 *AI:* ${aiRes.data.success}` }, { quoted: mek });
                         break;
                 }
             }
-
-            // Anti-Link
-            if (isGroup && body.includes('chat.whatsapp.com') && !isOwner) {
-                await bot.sendMessage(from, { delete: mek.key });
-                await bot.groupParticipantsUpdate(from, [sender], "remove");
-            }
-
         } catch (e) { console.log(e); }
-    });
-
-    bot.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect } = update;
-        if (connection === 'close') {
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== disconnectReason.loggedOut;
-            if (shouldReconnect) startNexus();
-        }
     });
 }
 
