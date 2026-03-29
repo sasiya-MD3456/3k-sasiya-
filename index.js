@@ -21,17 +21,19 @@ const PORT = process.env.PORT || 3000;
 
 let botConfig = {
     botName: "NEXUS-MD PRO V3",
-    owner: "947xxxxxxxx", // ඔයාගේ WhatsApp අංකය මෙතනට දාන්න
-    prefix: "."
+    owner: "94767475809", // ඔයාගේ අංකය
+    prefix: ".",
+    isPublic: true
 };
 
-// --- 🌐 WEB SERVER (STABILITY FIX) ---
-// මෙම කොටස function එකෙන් පිටත තැබීමෙන් Reconnect වීමේදී Port එක හිරවීම (EADDRINUSE) වලකී.
-app.get('/', (req, res) => res.send('Nexus-MD Telegram Pairing Service is Online! 🚀'));
-app.listen(PORT, () => console.log(`Dashboard running on port ${PORT}`));
+// --- 🌐 WEB SERVER (PORT FIX) ---
+app.get('/', (req, res) => res.send('Nexus-MD is Online & Stable! 🚀'));
+if (!global.serverStarted) {
+    app.listen(PORT, () => console.log(`Dashboard on ${PORT}`));
+    global.serverStarted = true;
+}
 
 async function startNexus() {
-    // Session එක save වෙන folder එක
     const { state, saveCreds } = await useMultiFileAuthState('nexus_session');
     const { version } = await fetchLatestBaileysVersion();
 
@@ -39,73 +41,71 @@ async function startNexus() {
         version,
         logger: pino({ level: 'silent' }),
         auth: state,
-        // --- 🛠️ CHROME FIX ---
         browser: ["Ubuntu", "Chrome", "20.0.04"], 
         printQRInTerminal: false,
         syncFullHistory: false
     });
 
     // --- 🤖 TELEGRAM PAIRING LOGIC ---
-    tgBot.onText(/\/start/, (msg) => {
-        const welcomeMsg = `⚡ *WELCOME TO ${botConfig.botName}* ⚡\n\n` +
-            `මෙම බොට් හරහා ඔබට ඉතා පහසුවෙන් Pairing Code එක ලබාගත හැක.\n\n` +
-            `👉 කරුණාකර ඔබගේ WhatsApp අංකය රටේ කේතය සහිතව එවන්න.\n` +
-            `*(නිදසුන: 94770475809)*`;
-        tgBot.sendMessage(msg.chat.id, welcomeMsg, { parse_mode: 'Markdown' });
-    });
-
     tgBot.on('message', async (msg) => {
         const text = msg.text;
+        const chatId = msg.chat.id;
+        if (text === '/start') {
+            return tgBot.sendMessage(chatId, `⚡ *WELCOME TO ${botConfig.botName}* ⚡\n\nPairing Code එක ලබා ගැනීමට WhatsApp අංකය එවන්න.\n*(Ex: 94770475809)*`, { parse_mode: 'Markdown' });
+        }
         if (text && /^\d+$/.test(text) && text.length > 9) {
-            const chatId = msg.chat.id;
             try {
-                tgBot.sendMessage(chatId, "⏳ කරුණාකර මොහොතක් රැඳී සිටින්න, Pairing Code එක සකසමින් පවතී...");
-                await delay(3000); 
-                
-                // WhatsApp Pairing Code Request
+                tgBot.sendMessage(chatId, "⏳ සකසමින් පවතී...");
                 let code = await sock.requestPairingCode(text.replace(/[^0-9]/g, ''));
-                
-                const successMsg = `🔥 *YOUR PAIRING CODE:* \n\n` +
-                    `👉   *${code}* 👈\n\n` +
-                    `මෙම කේතය ඔබගේ WhatsApp හි Linked Devices හරහා ඇතුළත් කරන්න.`;
-                
-                tgBot.sendMessage(chatId, successMsg, { parse_mode: 'Markdown' });
-            } catch (e) {
-                tgBot.sendMessage(chatId, "❌ වැරදීමක් සිදුවිය. අංකය පරීක්ෂා කර නැවත උත්සාහ කරන්න.");
-                console.error(e);
-            }
+                tgBot.sendMessage(chatId, `🔥 *CODE:* \`${code}\``, { parse_mode: 'Markdown' });
+            } catch (e) { tgBot.sendMessage(chatId, "❌ වැරදීමක් වුණා."); }
         }
     });
 
-    // --- 📩 WHATSAPP MESSAGE HANDLER (COMMANDS) ---
+    // --- 📩 WHATSAPP MESSAGE HANDLER ---
     sock.ev.on('messages.upsert', async (chatUpdate) => {
         try {
             const mek = chatUpdate.messages[0];
-            if (!mek.message || mek.key.fromMe) return;
+            if (!mek.message) return;
 
             const from = mek.key.remoteJid;
             const body = (mek.message.conversation || mek.message.extendedTextMessage?.text || "").trim();
             const isCmd = body.startsWith(botConfig.prefix);
             const command = isCmd ? body.slice(1).trim().split(/ +/).shift().toLowerCase() : "";
-            const args = body.trim().split(/ +/).slice(1);
-            const text = args.join(" ");
+            const text = body.trim().split(/ +/).slice(1).join(" ");
 
             if (isCmd) {
                 switch (command) {
                     case 'menu':
-                        const menu = `🚀 *${botConfig.botName}* 🚀\n\n` +
-                                     `👑 *Owner:* Sasiya MD\n` +
-                                     `⚡ *Prefix:* ${botConfig.prefix}\n\n` +
-                                     `🎵 *.song* [name]\n🎥 *.video* [name]\n🤖 *.ai* [text]\n\n` +
-                                     `_Powered by Developer Nexus_`;
-                        await sock.sendMessage(from, { text: menu }, { quoted: mek });
+                        const menuText = `🚀 *${botConfig.botName}* 🚀\n\n👑 *Owner:* Sasiya MD\n⚡ *Prefix:* ${botConfig.prefix}\n\n🎵 *.song* [name]\n🎥 *.video* [name]\n🤖 *.ai* [text]\n\n_Powered by Developer Nexus_`;
+                        await sock.sendMessage(from, { text: menuText }, { quoted: mek });
                         break;
 
                     case 'song':
                         if (!text) return sock.sendMessage(from, { text: "සින්දුවක නම දෙන්න!" });
-                        const s = await yts(text);
-                        const v = s.videos[0];
-                        await sock.sendMessage(from, { audio: { url: `https://api.download-lagu-mp3.com/@api/json/mp3/${v.videoId}` }, mimetype: 'audio/mp4' }, { quoted: mek });
+                        try {
+                            await sock.sendMessage(from, { text: "📥 සින්දුව සොයමින් පවතී..." }, { quoted: mek });
+                            const search = await yts(text);
+                            const vid = search.videos[0];
+                            
+                            // 🛠️ NEW STABLE API FOR MP3
+                            const res = await axios.get(`https://api.dreaded.site/api/ytdl/video?url=${encodeURIComponent(vid.url)}`);
+                            const downloadUrl = res.data.result.download_url;
+
+                            await sock.sendMessage(from, { 
+                                audio: { url: downloadUrl }, 
+                                mimetype: 'audio/mp4',
+                                fileName: `${vid.title}.mp3`
+                            }, { quoted: mek });
+                        } catch (err) {
+                            await sock.sendMessage(from, { text: "❌ සින්දුව ලබා ගැනීමට නොහැකි විය." });
+                        }
+                        break;
+
+                    case 'ai':
+                        if (!text) return sock.sendMessage(from, { text: "මොනවා හරි අහන්න!" });
+                        const aiRes = await axios.get(`https://api.simsimi.net/v2/?text=${encodeURIComponent(text)}&lc=en`);
+                        await sock.sendMessage(from, { text: `🤖 *AI:* ${aiRes.data.success}` }, { quoted: mek });
                         break;
                 }
             }
@@ -117,10 +117,9 @@ async function startNexus() {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
             const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log('Connection closed. Reconnecting...', shouldReconnect);
             if (shouldReconnect) startNexus();
         } else if (connection === 'open') {
-            console.log('✅ NEXUS-MD ලින්ක් වුණා මචං!');
+            console.log('✅ NEXUS-MD IS CONNECTED!');
         }
     });
 
