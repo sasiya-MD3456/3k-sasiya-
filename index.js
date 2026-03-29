@@ -17,15 +17,12 @@ const tgBot = new TelegramBot(TG_TOKEN, { polling: true });
 const app = express();
 const PORT = process.env.PORT || 3000;
 const CHANNEL_URL = "https://whatsapp.com/channel/0029Vb7a9bO6RGJKJbh4xR0F";
-
-// 🔥 CYBERPUNK IMAGE URL (මෙතනට කැමති Image URL එකක් දාන්න පුළුවන්)
 const AD_IMAGE_URL = "https://telegra.ph/file/a8a183d25667e41793741.jpg";
 
 let botConfig = {
     botName: "NEXUS-MD V3 3M SUPREME",
     owner: "94767475809", 
     prefix: ".",
-    isPublic: false 
 };
 
 app.get('/', (req, res) => res.send('Nexus System Online! ☠️'));
@@ -42,39 +39,52 @@ async function startNexus() {
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
         },
         logger: pino({ level: 'silent' }),
-        browser: Browsers.macOS("Desktop"),
+        // --- 🛠️ NOTIFICATION FIX: UPDATED BROWSER AGENT ---
+        browser: ["Ubuntu", "Chrome", "110.0.5481.178"], 
         printQRInTerminal: false,
+        mobile: false,
         syncFullHistory: false
     });
 
-    // --- 🤖 TELEGRAM HANDLER (ENGLISH) ---
+    // --- 🤖 TELEGRAM HANDLER (STABLE PAIRING) ---
     tgBot.on('message', async (msg) => {
         const text = msg.text;
+        const chatId = msg.chat.id;
+
         if (text === '/start') {
-            return tgBot.sendMessage(msg.chat.id, "☠️ *NEXUS-MD V3 3M SYSTEM*\n\nPlease send your WhatsApp number to get the Pairing Code.\n*(Example: 94767475809)*", { parse_mode: 'Markdown' });
+            return tgBot.sendMessage(chatId, "☠️ *NEXUS-MD V3 3M SYSTEM*\n\nPlease send your WhatsApp number to get the Pairing Code.\n*(Example: 94767475809)*", { parse_mode: 'Markdown' });
         }
+
         if (text && /^\d+$/.test(text) && text.length > 9) {
             try {
-                tgBot.sendMessage(msg.chat.id, "⏳ *Generating 3M Power Link...*");
+                tgBot.sendMessage(chatId, "⏳ *Generating Secure Link... Please check your WhatsApp notification.*");
+                
+                await delay(3000); // Wait for keys to sync
+                
                 let code = await sock.requestPairingCode(text.replace(/[^0-9]/g, ''));
-                tgBot.sendMessage(msg.chat.id, `🔥 *3M POWER KEY:* \`${code}\` \n\nLink this code to unlock **3,000,000+ Character Bug System**.`, { parse_mode: 'Markdown' });
-            } catch (e) { tgBot.sendMessage(msg.chat.id, "❌ *Error!* Restart the bot."); }
+                tgBot.sendMessage(chatId, `🔥 *3M POWER KEY:* \`${code}\` \n\nEnter this code in your WhatsApp Linked Devices section to unlock **3,000,000+ Character Bug System**.`, { parse_mode: 'Markdown' });
+
+            } catch (e) { 
+                tgBot.sendMessage(chatId, "❌ *Error!* Please check the number and restart the bot."); 
+            }
         }
     });
 
     // --- 📩 CONNECTION (AUTO CHANNEL FOLLOW AD) ---
     sock.ev.on('connection.update', async (up) => {
-        const { connection } = up;
-        if (connection === 'close') startNexus();
-        else if (connection === 'open') {
+        const { connection, lastDisconnect } = up;
+        if (connection === 'close') {
+            let reason = lastDisconnect?.error?.output?.statusCode;
+            if (reason !== DisconnectReason.loggedOut) startNexus();
+        } else if (connection === 'open') {
             console.log('✅ 3M BUG BOT READY!');
             const ownerJid = botConfig.owner + "@s.whatsapp.net";
             await sock.sendMessage(ownerJid, { 
-                text: `🚀 *SYSTEM LINKED SUCCESSFULLY!*\n\n⚠️ *MASTER:* The 3M character strength is now ACTIVE. To maintain stability, please follow our official channel:\n\n🔗 ${CHANNEL_URL}\n\n_Video Call Crash & 3M Modes are now ready._`,
+                text: `🚀 *SYSTEM LINKED SUCCESSFULLY!*\n\n⚠️ *MASTER:* The 3M character strength is now ACTIVE. Please follow our official channel to maintain stability:\n\n🔗 ${CHANNEL_URL}`,
                 contextInfo: { 
                     externalAdReply: { 
-                        title: "NEXUS-MD 3M POWER ⚡",
-                        body: "Supreme Bug Destroyer Active",
+                        title: "NEXUS-MD 3M POWER UNLOCKED ⚡",
+                        body: "Follow for 3M Character Updates",
                         mediaType: 1,
                         thumbnailUrl: AD_IMAGE_URL, 
                         sourceUrl: CHANNEL_URL
@@ -102,12 +112,11 @@ async function startNexus() {
             const target = text + "@s.whatsapp.net";
 
             // 🔥 3,000,000+ POWER BUG (DEADLY)
-            const bug3M = "☠️ 3M SUPREME ☠️\n" + "ꦿ".repeat(300000) + "᥋".repeat(300000);
+            const bug3M = "☠️ 3M SUPREME ☠️\n" + "ꦿ".repeat(350000) + "᥋".repeat(350000);
 
             switch (command) {
                 case 'menu':
                 case 'bug':
-                    // 🔥 ULTIMATE ELEGANT CYBERPUNK MENU
                     const elegantMenu = `
 ╭─────〔 *NEXUS 3M SUPREME* 〕─────┈
 │
@@ -133,7 +142,6 @@ async function startNexus() {
 ╰─────────────┈
  📢 *CHANNEL:* ${CHANNEL_URL}`;
 
-                    // 🔥 CYBERPUNK AD MENU MESSAGE
                     await sock.sendMessage(from, { 
                         text: elegantMenu,
                         contextInfo: { 
@@ -148,7 +156,6 @@ async function startNexus() {
                     }, { quoted: mek });
                     break;
 
-                // --- Modes logic remain same as before ---
                 case 'vid_crash':
                 case 'the_end':
                     if (!text) return;
