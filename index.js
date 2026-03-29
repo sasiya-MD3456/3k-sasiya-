@@ -2,7 +2,7 @@ const {
     default: makeWASocket, 
     useMultiFileAuthState, 
     fetchLatestBaileysVersion, 
-    disconnectReason, 
+    DisconnectReason, // <- Capital D (Error Fix)
     delay,
     Browsers
 } = require("@whiskeysockets/baileys");
@@ -21,12 +21,12 @@ const PORT = process.env.PORT || 3000;
 
 let botConfig = {
     botName: "NEXUS-MD PRO V3",
-    owner: "947xxxxxxxx", // මෙතනට ඔයාගේ නම්බර් එක දාන්න (e.g. 94771234567)
+    owner: "947xxxxxxxx", // ඔයාගේ අංකය මෙතනට දාන්න
     prefix: "."
 };
 
 async function startNexus() {
-    // Session එක save වෙන්න folder එකක් හදනවා
+    // Session එක save වෙන තැන
     const { state, saveCreds } = await useMultiFileAuthState('nexus_session');
     const { version } = await fetchLatestBaileysVersion();
 
@@ -56,7 +56,7 @@ async function startNexus() {
             const chatId = msg.chat.id;
             try {
                 tgBot.sendMessage(chatId, "⏳ කරුණාකර මොහොතක් රැඳී සිටින්න, Pairing Code එක සකසමින් පවතී...");
-                await delay(3000); // පොඩි වෙලාවක් දෙනවා Connection එක හැදෙන්න
+                await delay(3000); 
                 
                 // WhatsApp Pairing Code Request
                 let code = await sock.requestPairingCode(text.replace(/[^0-9]/g, ''));
@@ -67,7 +67,7 @@ async function startNexus() {
                 
                 tgBot.sendMessage(chatId, successMsg, { parse_mode: 'Markdown' });
             } catch (e) {
-                tgBot.sendMessage(chatId, "❌ වැරදීමක් සිදුවිය. ඔබගේ අංකය නිවැරදිදැයි පරීක්ෂා කර නැවත උත්සාහ කරන්න.");
+                tgBot.sendMessage(chatId, "❌ වැරදීමක් සිදුවිය. නැවත උත්සාහ කරන්න.");
                 console.error(e);
             }
         }
@@ -92,7 +92,7 @@ async function startNexus() {
                         const menu = `🚀 *${botConfig.botName}* 🚀\n\n` +
                                      `👑 *Owner:* Sasiya MD\n` +
                                      `⚡ *Prefix:* ${botConfig.prefix}\n\n` +
-                                     `🎵 *.song* [name]\n🎥 *.video* [name]\n🤖 *.ai* [text]\n🖼️ *.img* [query]\n\n` +
+                                     `🎵 *.song* [name]\n🎥 *.video* [name]\n🤖 *.ai* [text]\n\n` +
                                      `_Powered by Developer Nexus_`;
                         await sock.sendMessage(from, { text: menu }, { quoted: mek });
                         break;
@@ -108,17 +108,19 @@ async function startNexus() {
         } catch (e) { console.log(e); }
     });
 
-    sock.ev.on('creds.update', saveCreds);
-
+    // --- 📩 CONNECTION HANDLER (FIXED) ---
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== disconnectReason.loggedOut;
+            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
+            console.log('Connection closed. Reconnecting...', shouldReconnect);
             if (shouldReconnect) startNexus();
         } else if (connection === 'open') {
             console.log('✅ NEXUS-MD ලින්ක් වුණා මචං!');
         }
     });
+
+    sock.ev.on('creds.update', saveCreds);
 
     // --- 🌐 KEEP-ALIVE SERVER (H10 Fix) ---
     app.get('/', (req, res) => res.send('Nexus-MD Telegram Pairing Service is Online! 🚀'));
