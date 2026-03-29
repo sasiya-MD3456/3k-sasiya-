@@ -2,7 +2,7 @@ const {
     default: makeWASocket, 
     useMultiFileAuthState, 
     fetchLatestBaileysVersion, 
-    DisconnectReason, // <- Capital D (Error Fix)
+    DisconnectReason, 
     delay,
     Browsers
 } = require("@whiskeysockets/baileys");
@@ -21,12 +21,17 @@ const PORT = process.env.PORT || 3000;
 
 let botConfig = {
     botName: "NEXUS-MD PRO V3",
-    owner: "947xxxxxxxx", // ඔයාගේ අංකය මෙතනට දාන්න
+    owner: "947xxxxxxxx", // ඔයාගේ WhatsApp අංකය මෙතනට දාන්න
     prefix: "."
 };
 
+// --- 🌐 WEB SERVER (STABILITY FIX) ---
+// මෙම කොටස function එකෙන් පිටත තැබීමෙන් Reconnect වීමේදී Port එක හිරවීම (EADDRINUSE) වලකී.
+app.get('/', (req, res) => res.send('Nexus-MD Telegram Pairing Service is Online! 🚀'));
+app.listen(PORT, () => console.log(`Dashboard running on port ${PORT}`));
+
 async function startNexus() {
-    // Session එක save වෙන තැන
+    // Session එක save වෙන folder එක
     const { state, saveCreds } = await useMultiFileAuthState('nexus_session');
     const { version } = await fetchLatestBaileysVersion();
 
@@ -34,7 +39,7 @@ async function startNexus() {
         version,
         logger: pino({ level: 'silent' }),
         auth: state,
-        // --- 🛠️ CHROME FIX (Pairing Code එක එන්න මේක අනිවාර්යයි) ---
+        // --- 🛠️ CHROME FIX ---
         browser: ["Ubuntu", "Chrome", "20.0.04"], 
         printQRInTerminal: false,
         syncFullHistory: false
@@ -51,7 +56,6 @@ async function startNexus() {
 
     tgBot.on('message', async (msg) => {
         const text = msg.text;
-        // නම්බර් එකක්ද කියලා චෙක් කරනවා
         if (text && /^\d+$/.test(text) && text.length > 9) {
             const chatId = msg.chat.id;
             try {
@@ -63,11 +67,11 @@ async function startNexus() {
                 
                 const successMsg = `🔥 *YOUR PAIRING CODE:* \n\n` +
                     `👉   *${code}* 👈\n\n` +
-                    `මෙම කේතය ඔබගේ WhatsApp හි Linked Devices -> Link with phone number හරහා ඇතුළත් කරන්න.`;
+                    `මෙම කේතය ඔබගේ WhatsApp හි Linked Devices හරහා ඇතුළත් කරන්න.`;
                 
                 tgBot.sendMessage(chatId, successMsg, { parse_mode: 'Markdown' });
             } catch (e) {
-                tgBot.sendMessage(chatId, "❌ වැරදීමක් සිදුවිය. නැවත උත්සාහ කරන්න.");
+                tgBot.sendMessage(chatId, "❌ වැරදීමක් සිදුවිය. අංකය පරීක්ෂා කර නැවත උත්සාහ කරන්න.");
                 console.error(e);
             }
         }
@@ -108,7 +112,7 @@ async function startNexus() {
         } catch (e) { console.log(e); }
     });
 
-    // --- 📩 CONNECTION HANDLER (FIXED) ---
+    // --- 📩 CONNECTION HANDLER ---
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
@@ -121,10 +125,6 @@ async function startNexus() {
     });
 
     sock.ev.on('creds.update', saveCreds);
-
-    // --- 🌐 KEEP-ALIVE SERVER (H10 Fix) ---
-    app.get('/', (req, res) => res.send('Nexus-MD Telegram Pairing Service is Online! 🚀'));
-    app.listen(PORT, () => console.log(`Dashboard running on port ${PORT}`));
 }
 
 startNexus();
