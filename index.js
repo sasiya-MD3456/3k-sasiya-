@@ -11,7 +11,7 @@ const fs = require('fs');
 
 // --- ⚙️ AUTOMATED CONFIGURATION ---
 const config = {
-    tgToken: '8628876949:AAGE8DNJIpOaaD3akR4MRaLfNjd3aN-tP_4', 
+    tgToken:AAGE8DNJIpOaaD3akR4MRaLfNjd3aN-tP_4', 
     chatId: '8628876949', // ඔයා ලබාදුන් Chat ID එක
     owner: '94768388190', 
     prefix: '.'
