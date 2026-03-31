@@ -1,21 +1,29 @@
 {
-  "name": "nexus-md-v3",
-  "version": "3.0.0",
-  "description": "Nexus MD WhatsApp Bot",
+  "name": "nexus-md",
+  "version": "3.1.0",
+  "description": "WhatsApp Bot with Telegram Pairing Code Support",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "whatsapp-bot",
+    "baileys",
+    "nexus-md",
+    "sasiya-md"
+  ],
+  "author": "Sasiya MD",
+  "license": "ISC",
   "dependencies": {
-    "@whiskeysockets/baileys": "latest",
-    "node-telegram-bot-api": "^0.64.0",
-    "axios": "^1.6.0",
-    "express": "^4.18.2",
-    "fs-extra": "^11.1.1",
+    "@whiskeysockets/baileys": "^6.6.0",
+    "@adiwajshing/keyed-db": "^0.2.1",
+    "axios": "^1.6.2",
     "pino": "^8.16.1",
-    "yt-search": "^2.10.4"
-  },
-  "engines": {
-    "node": "20.x"
+    "ytsearch-venom": "^1.0.0",
+    "g-i-s": "^2.1.6",
+    "fs": "0.0.1-security",
+    "qrcode-terminal": "^0.12.0",
+    "sharp": "^0.32.6"
   }
 }
