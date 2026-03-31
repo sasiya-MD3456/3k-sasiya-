@@ -1,20 +1,15 @@
 {
   "name": "nexus-national-bug-v20",
   "version": "20.0.0",
-  "description": "Professional WhatsApp Bug Injection Terminal by Sasiya",
+  "description": "Fixed Version for Sasiya",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  "author": "Sasiya - Developer Nexus",
-  "license": "ISC",
   "dependencies": {
     "@whiskeysockets/baileys": "^6.6.0",
-    "@adiwajshing/keyed-db": "^0.2.4",
     "pino": "^8.19.0",
     "telegraf": "^4.15.3",
-    "qrcode-terminal": "^0.12.0",
-    "fs-extra": "^11.2.0",
-    "axios": "^1.6.7"
+    "fs-extra": "^11.2.0"
   }
 }
